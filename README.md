@@ -96,9 +96,15 @@ A small test dataset will be included to verify the functionality.
 
 # Literature
 [1] Dobin, Alexander, et al. "STAR: ultrafast universal RNA-seq aligner." Bioinformatics 29.1 (2013): 15-21.
+
 [2] Li, H., & Durbin, R. (2009). Fast and accurate short read alignment with Burrows–Wheeler transform. Bioinformatics, 25(14), 1754–1760.
+
 [3] Zhang, Xiao-Ou, et al. "Diverse alternative back-splicing and alternative splicing landscape of circular RNAs." Genome research 26.9 (2016): 1277-1287.
+
 [4] Gao, Yuan, Jinyang Zhang, and Fangqing Zhao. "Circular RNA identification based on multiple seed matching." Briefings in bioinformatics 19.5 (2018): 803-810.
+
 [5] John, Bino, et al. "Human microRNA targets." PLoS biology 2.11 (2004): e363.
+
 [6] Grant, Charles E., Timothy L. Bailey, and William Stafford Noble. "FIMO: scanning for occurrences of a given motif." Bioinformatics 27.7 (2011): 1017-1018.
+
 [7] Haas, B., and A. J. G. S. Papanicolaou. "TransDecoder (find coding regions within transcripts)." Google Scholar (2016).
