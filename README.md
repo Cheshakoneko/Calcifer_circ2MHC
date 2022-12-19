@@ -88,7 +88,7 @@ Circular-to-linear ratio:
 # Usage
 Calcifer can be executed from the command line. The dependencies should be installed beforehand in a suitable environment (e.g. miniconda). A proper conda environment can be imported with the calcifer_env.yml file, which will be present in the main folder.
 
-The proper usage can be show with calcifer --help.
+The proper usage can be shown with calcifer --help.
 
 A small test dataset will be included to verify the functionality.
 
