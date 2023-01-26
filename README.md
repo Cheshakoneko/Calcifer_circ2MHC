@@ -29,7 +29,7 @@ MiRNA binding sites are detected by miRanda [5] on the circular exonic sequence 
 The RBP binding prediction is performed with FIMO [6] on the same sequence (back-splice junction extended linear exon sequence) and additional on the not included sequence around the back-splice junction. CircRNA biogenesis can be enabled by RBP binding close to the back-splice junction. Also a putative function of circRNAs is the direct binding of RBPs.
 
 #### 5.4. ORF prediction
-The ORF prediction is performed on the linear- as well as the 2-fold, 3-fold and 4-fold exonic circRNA sequence. These enables the prediction of longer ORFs, which span over the back-splice junction as well as multiple reading frames. For the prediction of the longest ORF TransDecoder [7] is used.
+The ORF prediction is performed on the linear- as well as the pseudo-circular and multi-cycle exonic circRNA sequence. These enables the prediction of longer ORFs, which span over the back-splice junction as well as multiple reading frames. For the prediction of the ORFs ORFfinder [7] is used.
 
 ---
 
@@ -56,18 +56,15 @@ Most binding RBP on circRNA sequence (linear sequence with 25 bp added on both s
 > RNCMPT00043:1	
 
 Most binding RBP around the back-splice junction (250 bp up- and downstream of the back-splice junction and 25 bp into the circRNA on both sites):
-> no_rbp_binding	
+> no_rbp_binding		
 
-Linear sequence ORF:
-> 3prime_partial:593	
-
-1 cycle ORF:
+linear ORF:
 > complete:597	
 
-2 cycle ORF:
+pseudo circular ORF:
 > complete:597	
 
-3 cycle ORF:
+multi cycle ORF:
 > complete:597	
 
 Uniqueness of putative ORF peptide:
@@ -150,9 +147,9 @@ calcifer ciri2:
 calcifer downstream:   
 "calcifer.py -path [path] -data [name] -con [list] -con_names [list] -genome [fasta] -rt [se/pe] -gtf [gtf] -mirna [path] -pep [path] -rbp [path] -orf [path]"   
 
->-path			Path to the general working directory with the raw read files   
+>-path		Path to the general working directory with the raw read files   
 
->-data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
+>-data		Names of the datasets which are analyzed (if >1 then separate with a comma)   
 
 >-con			List with count of datasets for each condition   
 
@@ -177,11 +174,11 @@ calcifer downstream:
 calcifer full_run:   
 "calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf] -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path] -orf [path]" 
   
->-path			Path to the general working directory with the raw read files   
+>-path		Path to the general working directory with the raw read files   
 
->-data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
+>-data		Names of the datasets which are analyzed (if >1 then separate with a comma)   
 
->-star			Path to the folder with a STAR index, the index needs to be generated before using Calcifer   
+>-star		Path to the folder with a STAR index, the index needs to be generated before using Calcifer   
 
 >-genome		Path to the reference genome in fasta-format   
 
@@ -235,4 +232,4 @@ The following information is provided for each circRNA:
 
 [6] Grant, Charles E., Timothy L. Bailey, and William Stafford Noble. "FIMO: scanning for occurrences of a given motif." Bioinformatics 27.7 (2011): 1017-1018.
 
-[7] Haas, B., and A. J. G. S. Papanicolaou. "TransDecoder (find coding regions within transcripts)." Google Scholar (2016).
+[7] NCBI. "ORFfinder." (2017).
