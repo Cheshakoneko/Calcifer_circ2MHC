@@ -12,7 +12,7 @@ Calcifer is a workflow for highly automated detection and analysis of circRNAs i
 
 # 2. Overview
 
-![Calcifer workflow](/assets/images/calcifer_new_workflow.png)
+![Calcifer workflow](/assets/images/calcifer_new_changed_workflow.png)
 
 # 3. CircRNA detection
 In a first step the RNA-seq data is aligned with STAR [1] and bwa [2] against the reference genome. The resulting bam-files are used as input for CIRCexplorer2 [3] and CIRI2 [4] respectively. These both tools yield an unfiltered list of putative circRNAs, which is further processed.
