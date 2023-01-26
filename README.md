@@ -111,9 +111,9 @@ Usage:
 calcifer circexplorer2:   
 "calcifer.py circexplorer2 -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe]"  
  
->-path    Path to the general working directory with the raw read files   
+>-path		Path to the general working directory with the raw read files   
 
->-data    Names of the datasets which are analyzed (if >1 then separate with a comma)   
+>-data		Names of the datasets which are analyzed (if >1 then separate with a comma)   
 
 >-star		Path to the folder with a STAR index, the index needs to be generated before using Calcifer   
 
