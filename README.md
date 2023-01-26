@@ -104,7 +104,7 @@ Takes the results from the ce2 and ciri2 mode as input (in addition to other inp
 Combines all other modes into one workflow, this is the default mode for calcifer.
 
 
-A suitable conda environment can be installed with the included environment.yml-file with "conda env create -f environment.yml". CIRI2 and ORFfinder need to be installed manually. The path to both need to be included as parameters in the respective modes. Both are not available in conda.
+A suitable conda environment can be installed with the included environment.yml-file with "conda env create -f environment.yml".   CIRI2 and ORFfinder need to be installed manually.    The path to both need to be included as parameters in the respective modes. Both are not available in conda.
 
 The used gtf-file needs to be from the actual ensemble release.
 
