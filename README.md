@@ -4,7 +4,7 @@ Author: Andre Brezski, Kathi Zarnack
 ---
 
 Important:   
-At the moment Calcifer only works with a conda nevironment created by the environment.yml-file.   
+At the moment Calcifer only works with a conda environment created by the environment.yml-file.   
 A non-compiled version will be available with the full release.
 
 # 1. Introduction
