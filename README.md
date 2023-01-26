@@ -3,6 +3,10 @@ Author: Andre Brezski, Kathi Zarnack
 
 ---
 
+Important:   
+At the moment Calcifer only works with a conda nevironment created by the environment.yml-file.   
+A non-compiled version will be available with the full release.
+
 # 1. Introduction
 Calcifer is a workflow for highly automated detection and analysis of circRNAs in RNA-Seq datasets. It allows the evaluation of RNA-Seq read data up to a list of characterized circRNA isoforms, as well as the prediction of possible functions.
 
