@@ -118,59 +118,58 @@ calcifer circexplorer2:
 
 
 calcifer ciri2:   
-"calcifer.py ciri2 -path [path] -data [name] -bwa [index] -genome [fasta] -ref [gtf] -cpath [path] -rt [se/pe]"   
--path			Path to the general working directory with the raw read files   
--data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
--bwa			Path to the folder with a bwa index, the index needs to be generated before using Calcifer   
--genome		Path to the reference genome in fasta-format   
--ref			Path to the ensemble gtf-file   
--cpath		Path to ciri2.pl (the CIRI2 installation), the installation needs to be done manually as there is no conda version   
--rt			Read type of the input files (se [single-end] or pe [paired-end])   
+>"calcifer.py ciri2 -path [path] -data [name] -bwa [index] -genome [fasta] -ref [gtf] -cpath [path] -rt [se/pe]"   
+>-path			Path to the general working directory with the raw read files   
+>-data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
+>-bwa			Path to the folder with a bwa index, the index needs to be generated before using Calcifer   
+>-genome		Path to the reference genome in fasta-format   
+>-ref			Path to the ensemble gtf-file   
+>-cpath		Path to ciri2.pl (the CIRI2 installation), the installation needs to be done manually as there is no conda version   
+>-rt			Read type of the input files (se [single-end] or pe [paired-end])   
 
 
 calcifer downstream:   
-"calcifer.py -path [path] -data [name] -con [list] -con_names [list] -genome [fasta] -rt [se/pe] -gtf [gtf] -mirna [path] -pep [path] -rbp [path] -orf [path]"   
--path			Path to the general working directory with the raw read files   
--data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
--con			List with count of datasets for each condition   
--con_names		Names of the condition in the same order as the count from -con   
--genome		Path to the reference genome in fasta-format   
--rt			Read type of the input files (se [single-end] or pe [paired-end])   
--gtf			Path to the ensemble gtf-file   
--mirna		Path to a miRNA database [can be downloaded from miRBase.org]   
--pep			Path to a peptide fasta file [can be downloaded from the actual ensembl release]   
--rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
--orf			Path to the ORFfinder installation, the installation needs to be done manually [ORFfinder is only available on Linux]   
+>"calcifer.py -path [path] -data [name] -con [list] -con_names [list] -genome [fasta] -rt [se/pe] -gtf [gtf] -mirna [path] -pep [path] -rbp [path] -orf [path]"   
+>-path			Path to the general working directory with the raw read files   
+>-data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
+>-con			List with count of datasets for each condition   
+>-con_names		Names of the condition in the same order as the count from -con   
+>-genome		Path to the reference genome in fasta-format   
+>-rt			Read type of the input files (se [single-end] or pe [paired-end])   
+>-gtf			Path to the ensemble gtf-file   
+>-mirna		Path to a miRNA database [can be downloaded from miRBase.org]   
+>-pep			Path to a peptide fasta file [can be downloaded from the actual ensembl release]   
+>-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
+>-orf			Path to the ORFfinder installation, the installation needs to be done manually [ORFfinder is only available on Linux]   
 
 
 calcifer full_run:   
-"calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf]    
-			 -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path] -orf [path]"   
--path			Path to the general working directory with the raw read files   
--data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
--star			Path to the folder with a STAR index, the index needs to be generated before using Calcifer   
--genome		Path to the reference genome in fasta-format   
--gene_pred		Path to a gene prediction file, needes for CE2, can be generated using ucsc gtfToGenePred   
--rt			Read type of the input files (se [single-end] or pe [paired-end])   
--bwa			Path to the folder with a bwa index, the index needs to be generated before using Calcifer   
--cpath		Path to ciri2.pl (the CIRI2 installation), the installation needs to be done manually as there is no conda version   
--gtf			Path to the ensemble gtf-file   
--mirna		Path to a miRNA database [can be downloaded from miRBase.org]   
--pep			Path to a peptide database [can be downloaded from the actual ensembl release]   
--rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
--orf			Path to the ORFfinder installation, the installation needs to be done manually [ORFfinder is only available on Linux]   
--con			List with count of datasets for each condition   
--con_names		Names of the condition in the same order as the count from -con   
+>"calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf] -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path] -orf [path]"   
+>-path			Path to the general working directory with the raw read files   
+>-data			Names of the datasets which are analyzed (if >1 then separate with a comma)   
+>-star			Path to the folder with a STAR index, the index needs to be generated before using Calcifer   
+>-genome		Path to the reference genome in fasta-format   
+>-gene_pred		Path to a gene prediction file, needes for CE2, can be generated using ucsc gtfToGenePred   
+>-rt			Read type of the input files (se [single-end] or pe [paired-end])   
+>-bwa			Path to the folder with a bwa index, the index needs to be generated before using Calcifer   
+>-cpath		Path to ciri2.pl (the CIRI2 installation), the installation needs to be done manually as there is no conda version   
+>-gtf			Path to the ensemble gtf-file   
+>-mirna		Path to a miRNA database [can be downloaded from miRBase.org]   
+>-pep			Path to a peptide database [can be downloaded from the actual ensembl release]   
+>-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
+>-orf			Path to the ORFfinder installation, the installation needs to be done manually [ORFfinder is only available on Linux]   
+>-con			List with count of datasets for each condition   
+>-con_names		Names of the condition in the same order as the count from -con   
 
 
 Downstream/Fullrun Output:   
 The main output it the calcifer_output.tab file.   
 The file contains an overview of all detected circRNAs and each of the respective downstream analyses.   
 The following information is provided for each circRNA:   
-circID	parental_gene	type	unique_bsr	con_clr_header	    
-mirna_binding_site_density	most_mirna	   
-rbp_circ_binding	rbp_bsj_binding	   
-linear_seq_orf	pseudo_circular_seq_orf	multi_cycle_seq_orf	unique_region   
+>circID	parental_gene	type	unique_bsr	con_clr_header	    
+>mirna_binding_site_density	most_mirna	   
+>rbp_circ_binding	rbp_bsj_binding	   
+>linear_seq_orf	pseudo_circular_seq_orf	multi_cycle_seq_orf	unique_region   
 
 
 
