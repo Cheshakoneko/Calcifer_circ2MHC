@@ -33,7 +33,7 @@ MiRNA binding sites are detected by miRanda [5] on the circular exonic sequence 
 The RBP binding prediction is performed with FIMO [6] on the same sequence (back-splice junction extended linear exon sequence) and additional on the not included sequence around the back-splice junction. CircRNA biogenesis can be enabled by RBP binding close to the back-splice junction. Also a putative function of circRNAs is the direct binding of RBPs.
 
 #### 5.4. ORF prediction
-The ORF prediction is performed on the linear- as well as the pseudo-circular and multi-cycle exonic circRNA sequence. These enables the prediction of longer ORFs, which span over the back-splice junction as well as multiple reading frames. For the prediction of the ORFs ORFfinder [7] is used.
+The ORF prediction is performed on the linear- as well as the pseudo-circular and multi-cycle exonic circRNA sequence. These enables the prediction of longer ORFs, which span over the back-splice junction as well as multiple reading frames.
 
 ---
 
@@ -105,9 +105,8 @@ Combines all other modes into one workflow, this is the default mode for calcife
 
 
 A suitable conda environment can be installed with the included environment.yml-file with "conda env create -f environment.yml".   
-CIRI2 and ORFfinder need to be installed manually.    
-The path to both need to be included as parameters in the respective modes.   
-Both are not available in conda.
+CIRI2 needs to be installed manually.    
+The path to CIRI2 needs to be included as parameters in the respective modes.   
 
 The used gtf-file needs to be from the actual ensemble release.
 
@@ -152,7 +151,7 @@ calcifer ciri2:
 
 
 calcifer downstream:   
-"calcifer.py -path [path] -data [name] -con [list] -con_names [list] -genome [fasta] -rt [se/pe] -gtf [gtf] -mirna [path] -pep [path] -rbp [path] -orf [path]"   
+"calcifer.py -path [path] -data [name] -con [list] -con_names [list] -genome [fasta] -rt [se/pe] -gtf [gtf] -mirna [path] -pep [path] -rbp [path]"   
 
 >-path		Path to the general working directory with the raw read files   
 
@@ -173,13 +172,11 @@ calcifer downstream:
 >-pep			Path to a peptide fasta file [can be downloaded from the actual ensembl release]   
 
 >-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
-
->-orf			Path to the ORFfinder installation, the installation needs to be done manually [ORFfinder is only available on Linux]  
  
 
 
 calcifer full_run:   
-"calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf] -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path] -orf [path]" 
+"calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf] -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path]" 
   
 >-path		Path to the general working directory with the raw read files   
 
@@ -203,9 +200,7 @@ calcifer full_run:
 
 >-pep			Path to a peptide database [can be downloaded from the actual ensembl release]   
 
->-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
-
->-orf			Path to the ORFfinder installation, the installation needs to be done manually [ORFfinder is only available on Linux]   
+>-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]    
 
 >-con			List with count of datasets for each condition   
 
@@ -238,5 +233,3 @@ The following information is provided for each circRNA:
 [5] John, Bino, et al. "Human microRNA targets." PLoS biology 2.11 (2004): e363.
 
 [6] Grant, Charles E., Timothy L. Bailey, and William Stafford Noble. "FIMO: scanning for occurrences of a given motif." Bioinformatics 27.7 (2011): 1017-1018.
-
-[7] NCBI. "ORFfinder." (2017).
