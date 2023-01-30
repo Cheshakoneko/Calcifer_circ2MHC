@@ -55,7 +55,7 @@ def ciri2(args):
     file_path = args.path
     dataset = args.data
     bwa_index = args.bwaindex
-    genome_file = args.genome
+    genome_path = args.genome
     gtf_file = args.gtf
     ciri_path = args.cpath
     read_type = args.read_type
@@ -72,7 +72,7 @@ def ciri2(args):
         calcifer_ciri2_modules.pe_bwa_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, bwa_index)
 
     # function call for ciri2 #
-    calcifer_ciri2_modules.ciri2_find(ciri_path, working_dir, gtf_file, genome_file)
+    calcifer_ciri2_modules.ciri2_find(ciri_path, working_dir, gtf_file, genome_path)
 
 
 # Main method for downstream analysis of ce2 and ciri2 results #
@@ -83,18 +83,17 @@ def downstream(args):
     conditions = args.condition.split(",")
     condition_name = args.condition_names.split(",")
     working_dir = args.path
-    genome_file = args.genome
+    genome_fasta = args.genome_fasta
     read_type = args.read_type
     gtf_file = args.gtf
     mirna_run = args.mirna
     pep_ref = args.pep
     rbp_db = args.rbp
-    path_to_orffinder = args.orf_finder_loc
 
     # create suitable data structure for the results #
     calcifer_downstream_results_modules.data_structure_filtering(working_dir)
     # using chimeric junctions from star as ground truth and filter for canonical splice sites #
-    calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_file, gtf_file)
+    calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file)
     # merge results based on conditions and all results per default #
     calcifer_filtering_modules.merging_results(working_dir, datasets, conditions)
     # annotate all results remaining after the strict filters #
@@ -104,11 +103,11 @@ def downstream(args):
     calcifer_downstream_countmatrix_modules.deseq2_analysis(working_dir, datasets, conditions, condition_name, read_type, gtf_file)
 
     cds_anno, three_utr_anno, exon_anno, exon_endings = calcifer_downstream_sequence_modules.mirna_annotation(gtf_file)
-    calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_file, exon_anno, exon_endings)
+    calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_fasta, exon_anno, exon_endings)
     
     calcifer_downstream_mirna_modules.mirna_analysis(working_dir, mirna_run)
     
-    calcifer_downstream_orf_modules.orf_detection(path_to_orffinder, working_dir)
+    calcifer_downstream_orf_modules.orf_detection(working_dir)
     calcifer_downstream_orf_modules.longest_orf_filtering(working_dir)
     calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref)
     
@@ -133,11 +132,11 @@ def full_run(args):
     bwa_index = args.bwaindex
     ciri_path = args.cpath
     gene_pred_file = args.gene_pred
+    genome_fasta = args.genome_fasta
     gtf_file = args.gtf
     mirna_run = args.mirna
     pep_ref = args.pep
     rbp_db = args.rbp
-    path_to_orffinder = args.orf_finder_loc
 
     for dataset in datasets:
         working_dir = calcifer_general_modules.file_structure(file_path, dataset)
@@ -164,7 +163,7 @@ def full_run(args):
     # create suitable data structure for the results #
     calcifer_downstream_results_modules.data_structure_filtering(working_dir)
     # using chimeric junctions from star as ground truth and filter for canonical splice sites #
-    calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_file, gtf_file)
+    calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file)
     # merge results based on conditions and all results per default #
     calcifer_filtering_modules.merging_results(working_dir, datasets, conditions)
     # annotate all results remaining after the strict filters #
@@ -174,11 +173,11 @@ def full_run(args):
     calcifer_downstream_countmatrix_modules.deseq2_analysis(working_dir, datasets, conditions, condition_name, read_type, gtf_file)
 
     cds_anno, three_utr_anno, exon_anno, exon_endings = calcifer_downstream_sequence_modules.mirna_annotation(gtf_file)
-    calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_file, exon_anno, exon_endings)
+    calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_fasta, exon_anno, exon_endings)
     
     calcifer_downstream_mirna_modules.mirna_analysis(working_dir, mirna_run)
     
-    calcifer_downstream_orf_modules.orf_detection(path_to_orffinder, working_dir)
+    calcifer_downstream_orf_modules.orf_detection(working_dir)
     calcifer_downstream_orf_modules.longest_orf_filtering(working_dir)
     calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref)
     
@@ -217,7 +216,7 @@ circexplorer2_parser.set_defaults(func=circexplorer2)
 
 
 ciri2_parser = subparsers.add_parser('ciri2', usage="calcifer.py ciri2 -path [path] -data [name] -bwa [index] -genome "
-                                     "[fasta] -ref [gtf] -cpath [ciri2] -rt [se/pe]")
+                                     "[fasta] -ref [gff] -cpath [ciri2] -rt [se/pe]")
 ciri2_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 ciri2_parser.add_argument("-data", action="store", dest="data", help="Input name of dataset", required=True)
 ciri2_parser.add_argument("-bwa", action="store", dest="bwaindex", help="Path to bwa-index", required=True)
@@ -231,7 +230,7 @@ ciri2_parser.set_defaults(func=ciri2)
 
 
 downstream_parser = subparsers.add_parser('downstream', usage="calcifer.py downstream -path [path] -data [data] -con "
-                                                              "[list] -con_names [list] -genome_file [fasta]")
+                                                              "[list] -con_names [list] -genome_fasta [fasta]")
 downstream_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 downstream_parser.add_argument("-data", action="store", dest="data", help="Input list of names of the datasets",
                                required=True)
@@ -241,7 +240,7 @@ downstream_parser.add_argument("-con", action="store", dest="condition",
 downstream_parser.add_argument("-con_names", action="store", dest="condition_names",
                                help="List of condition names, same order as dataset names and conditions",
                                required=True)
-downstream_parser.add_argument("-genome", action="store", dest="genome",
+downstream_parser.add_argument("-genome_fasta", action="store", dest="genome_fasta",
                                help="Path to fasta-file of ref genome", required=True)
 downstream_parser.add_argument("-rt", action="store", dest="read_type",
                                help="Type of reads, se for single-end and pe for paired-end accepted", required=True)
@@ -253,13 +252,12 @@ downstream_parser.add_argument("-mirna", action="store", dest="mirna",
 downstream_parser.add_argument("-pep", action="store", dest="pep",
                                help="Path to fasta-file with all pc-transcripts", required=True)
 downstream_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
-downstream_parser.add_argument("-orf", action="store", dest="orf_finder_loc", help="Path to orffinder installation", required=True)
 downstream_parser.set_defaults(func=downstream)
 
 
 full_run_parser = subparsers.add_parser('full_run', usage="calcifer.py full_run -path [path] -data [data] -star ["
                                                           "index] -genome [fasta] -ref [gff] -gene_pred [txt] -rt ["
-                                                          "se/pe] -con [list] -cpath [ciri2] -bwa [index]")
+                                                          "se/pe] -con [list] -cpath [ciri2] -bwa [index] -genome_fasta [fasta]")
 full_run_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 full_run_parser.add_argument("-data", action="store", dest="data", help="Input list of names of the datasets",
                              required=True)
@@ -279,12 +277,13 @@ full_run_parser.add_argument("-con_names", action="store", dest="condition_names
                              required=True)
 full_run_parser.add_argument("-cpath", action="store", dest="cpath", help="Path to ciri2.pl", required=True)
 full_run_parser.add_argument("-bwa", action="store", dest="bwaindex", help="Path to bwa-index", required=True)
+full_run_parser.add_argument("-genome_fasta", action="store", dest="genome_fasta",
+                             help="Path to fasta-file of ref genome", required=True)
 full_run_parser.add_argument("-mirna", action="store", dest="mirna",
                              help="Path to miRNA database", required=True)
 full_run_parser.add_argument("-pep", action="store", dest="pep", help="Path to fasta-file with all pc-transcripts",
                              required=True)
 full_run_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
-full_run_parser.add_argument("-orf", action="store", dest="orf_finder_loc", help="Path to orffinder installation", required=True)
 full_run_parser.set_defaults(func=full_run)
 
 
