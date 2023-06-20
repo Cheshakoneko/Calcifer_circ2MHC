@@ -115,7 +115,7 @@ Usage:
 
 
 calcifer circexplorer2:   
-"calcifer.py circexplorer2 -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe]"  
+"calcifer.py circexplorer2 -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -t [threads]"  
  
 >-path		Path to the general working directory with the raw read files   
 
@@ -127,12 +127,14 @@ calcifer circexplorer2:
 
 >-gene_pred		Path to a gene prediction file, needes for CE2, can be generated using ucsc gtfToGenePred   
 
->-rt			Read type of the input files (se [single-end] or pe [paired-end])   
+>-rt			Read type of the input files (se [single-end] or pe [paired-end])
+
+>-t			Amount of threads used for the mapping
 
 
 
 calcifer ciri2:   
-"calcifer.py ciri2 -path [path] -data [name] -bwa [index] -genome [fasta] -ref [gtf] -cpath [path] -rt [se/pe]"  
+"calcifer.py ciri2 -path [path] -data [name] -bwa [index] -genome [fasta] -ref [gtf] -cpath [path] -rt [se/pe] -t [threads]"  
  
 >-path		Path to the general working directory with the raw read files   
 
@@ -147,6 +149,8 @@ calcifer ciri2:
 >-cpath		Path to ciri2.pl (the CIRI2 installation), the installation needs to be done manually as there is no conda version  
  
 >-rt			Read type of the input files (se [single-end] or pe [paired-end])   
+
+>-t			Amount of threads used for the mapping
 
 
 
@@ -176,7 +180,7 @@ calcifer downstream:
 
 
 calcifer full_run:   
-"calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf] -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path]" 
+"calcifer full_run -path [path] -data [name] -star [index] -genome [fasta] -gene_pred [txt] -rt [se/pe] -gtf [gtf] -con [list] -con_names [list] -cpath [path] -bwa [index] -mirna [path] -pep [path] -rbp [path] -t [threads]" 
   
 >-path		Path to the general working directory with the raw read files   
 
@@ -205,6 +209,8 @@ calcifer full_run:
 >-con			List with count of datasets for each condition   
 
 >-con_names		Names of the condition in the same order as the count from -con   
+
+>-t			Amount of threads used for the mapping
 
 
 
