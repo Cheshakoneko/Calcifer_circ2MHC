@@ -3,10 +3,6 @@ Author: Andre Brezski, Kathi Zarnack
 
 ---
 
-Important:   
-At the moment Calcifer only works with a conda environment created by the environment.yml-file.   
-A non-compiled version will be available with the full release.
-
 # 1. Introduction
 Calcifer is a workflow for highly automated detection and analysis of circRNAs in RNA-Seq datasets. It allows the evaluation of RNA-Seq read data up to a list of characterized circRNA isoforms, as well as the prediction of possible functions.
 
@@ -50,6 +46,9 @@ CircRNA type:
 Unique back-splice junction reads:
 > 21
 
+Circular-to-linear ratio:
+> 0.28852
+
 MiRNA binding site density [binding sites/bp]:
 > 0.09532	
 
@@ -63,19 +62,16 @@ Most binding RBP around the back-splice junction (250 bp up- and downstream of t
 > no_rbp_binding		
 
 linear ORF:
-> complete:597	
+> 1:122 (amount circRNAs with complete ORF:length  longest resulting peptide)
 
 pseudo circular ORF:
-> complete:597	
+> 5:322
 
 multi cycle ORF:
-> complete:597	
+> 2:788
 
 Uniqueness of putative ORF peptide:
 > non_unique	
-
-Circular-to-linear ratio:
-> 0.28852
  
 
 ---
@@ -102,6 +98,9 @@ Takes the results from the ce2 and ciri2 mode as input (in addition to other inp
 
 "calcifer fullrun":   
 Combines all other modes into one workflow, this is the default mode for calcifer.
+
+"calcifer list":  
+Downstream analysis for existing list of circRNAs (input is positional circRNA information: "chr:xx:yy:strand")
 
 
 A suitable conda environment can be installed with the included environment.yml-file with "conda env create -f environment.yml".   
@@ -175,7 +174,13 @@ calcifer downstream:
 
 >-pep			Path to a peptide fasta file [can be downloaded from the actual ensembl release]   
 
->-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]   
+>-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]
+
+>-rbp-cutoff   Q-value threshold for FIMO results (optional, default = 0.1)
+
+>-ubsjr_filter   Minimum unique backsplice junction supporting reads for high confidence circRNAs (optional, default = 2)
+
+>-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
  
 
 
@@ -212,6 +217,37 @@ calcifer full_run:
 
 >-t			Amount of threads used for the mapping
 
+>-rbp-cutoff   Q-value threshold for FIMO results (optional, default = 0.1)
+
+>-ubsjr_filter   Minimum unique backsplice junction supporting reads for high confidence circRNAs (optional, default = 2)
+
+>-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
+
+
+
+calcifer list:
+"calcifer list -path [path] -circ_list [path] -genome_fasta [fasta] -gtf [gtf] -mirna [path] -pep [path] -rbp [path]" 
+  
+>-path		Path to the general working directory with the raw read files   
+
+>-circ_list	List of circRNA positions
+
+>-genome_fasta		Path to the reference genome in fasta-format     
+
+>-gtf			Path to the ensemble gtf-file   
+
+>-mirna		Path to a miRNA database [can be downloaded from miRBase.org]   
+
+>-pep			Path to a peptide database [can be downloaded from the actual ensembl release]   
+
+>-rbp			Path to a RBP database [can be downloaded from the MEME motif database, Ray et al. 2013]    
+
+>-rbp-cutoff   Q-value threshold for FIMO results (optional, default = 0.1)
+
+>-ubsjr_filter   Minimum unique backsplice junction supporting reads for high confidence circRNAs (optional, default = 2)
+
+>-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
+
 
 
 Downstream/Fullrun Output:   
@@ -221,7 +257,7 @@ The following information is provided for each circRNA:
 >circID	parental_gene	type	unique_bsr	con_clr_header	    
 >mirna_binding_site_density	most_mirna	   
 >rbp_circ_binding	rbp_bsj_binding	   
->linear_seq_orf	pseudo_circular_seq_orf	multi_cycle_seq_orf	unique_region   
+>linear_seq_orf	pseudo_circular_seq_orf	multi_cycle_seq_orf	unique_peptide_regions    
 
 
 
