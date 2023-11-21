@@ -252,12 +252,13 @@ subparsers = parser.add_subparsers()
 # specify different modes for the pipeline with needed arguments and helps #
 circexplorer2_parser = subparsers.add_parser('circexplorer2',
                                              usage="calcifer.py circexplorer2 -path [path] -data [name] -star [index] "
-                                                   "-genome [fasta] -gene_pred [txt] -rt [se/pe]")
+                                                   "-genome [fasta] -gene_pred [txt] -rt [se/pe] -t [threads]")
 circexplorer2_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
-circexplorer2_parser.add_argument("-data", action="store", dest="data", help="Input name of dataset", required=True)
+circexplorer2_parser.add_argument("-data", action="store", dest="data", help="Input name of datasets", required=True)
 circexplorer2_parser.add_argument("-star", action="store", dest="star", help="Path to star-index", required=True)
 circexplorer2_parser.add_argument("-genome", action="store", dest="genome", help="Path to genome-fasta", required=True)
-circexplorer2_parser.add_argument("-gene_pred", action="store", dest="gene_pred", help="Path to ref gene_pred.txt",
+circexplorer2_parser.add_argument("-gene_pred", action="store", dest="gene_pred", help="Path to ref gene_pred.txt "
+                                                                                       "(generate before run!)",
                                   required=True)
 circexplorer2_parser.add_argument("-rt", action="store", dest="read_type",
                                   help="Type of the reads, se for single-end and pe for paired-end accepted",
@@ -268,7 +269,7 @@ circexplorer2_parser.set_defaults(func=circexplorer2)
 
 
 ciri2_parser = subparsers.add_parser('ciri2', usage="calcifer.py ciri2 -path [path] -data [name] -bwa [index] -genome "
-                                     "[fasta] -ref [gff] -cpath [ciri2] -rt [se/pe]")
+                                     "[fasta] -ref [gff] -cpath [ciri2] -rt [se/pe] -t [threads]")
 ciri2_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 ciri2_parser.add_argument("-data", action="store", dest="data", help="Input name of dataset", required=True)
 ciri2_parser.add_argument("-bwa", action="store", dest="bwaindex", help="Path to bwa-index", required=True)
@@ -284,7 +285,9 @@ ciri2_parser.set_defaults(func=ciri2)
 
 
 downstream_parser = subparsers.add_parser('downstream', usage="calcifer.py downstream -path [path] -data [data] -con "
-                                                              "[list] -con_names [list] -genome_fasta [fasta]")
+                                                              "[list] -con_names [list] -genome_fasta [fasta] -rt "
+                                                              "[se/pe] -gtf [path] -mirna [path] -pep [path] "
+                                                              "-rbp [path]")
 downstream_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 downstream_parser.add_argument("-data", action="store", dest="data", help="Input list of names of the datasets",
                                required=True)
@@ -306,17 +309,19 @@ downstream_parser.add_argument("-mirna", action="store", dest="mirna",
 downstream_parser.add_argument("-pep", action="store", dest="pep",
                                help="Path to fasta-file with all pc-transcripts", required=True)
 downstream_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
-downstream_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides, minlen < 4 may lead to error",
-                             default=10)
+downstream_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA "
+                                                                           "peptides, minlen < 4 may lead to error",
+                               default=10)
 downstream_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q value threshold for FIMO results",
-                             default=0.1)
-downstream_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction supporting reads for high conf.",
-                             default=2)
+                               default=0.1)
+downstream_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction "
+                                                                                   "supporting reads for high conf.",
+                               default=2)
 downstream_parser.set_defaults(func=downstream)
 
 
-list_parser = subparsers.add_parser('list', usage="calcifer.py downstream -path [path] -data [data] -con [list] "
-                                                  "-con_names [list] -genome_fasta [fasta]")
+list_parser = subparsers.add_parser('list', usage="calcifer.py list -path [path] -circ_list [data] -genome_fasta "
+                                                  "[path] -gtf [path] -mirna [path] -pep [path] -rbp [path]")
 list_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 list_parser.add_argument("-circ_list", action="store", dest="circ_list", help="Path to circRNA list", required=True)
 list_parser.add_argument("-genome_fasta", action="store", dest="genome_fasta", help="Path to fasta-file of ref genome",
@@ -326,17 +331,18 @@ list_parser.add_argument("-mirna", action="store", dest="mirna", help="Path to m
 list_parser.add_argument("-pep", action="store", dest="pep", help="Path to fasta-file with all pc-transcripts",
                          required=True)
 list_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
-list_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides, minlen < 4 may lead to error",
-                             default=10)
+list_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides,"
+                                                                     " minlen < 4 may lead to error", default=10)
 list_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q value threshold for FIMO results",
-                             default=0.1)
+                         default=0.1)
 list_parser.set_defaults(func=list_mode)
 
 
 full_run_parser = subparsers.add_parser('full_run', usage="calcifer.py full_run -path [path] -data [data] "
-                                                          "-star [index] -genome [fasta] -ref [gff] -gene_pred [txt] "
+                                                          "-star [index] -genome [fasta] -gtf [gtf] -gene_pred [txt] "
                                                           "-rt [se/pe] -con [list] -cpath [ciri2] -bwa [index] "
-                                                          "-genome_fasta [fasta]")
+                                                          "-genome_fasta [fasta] -mirna [path] -pep [path] -rbp [path]"
+                                                          " -t [threads]")
 full_run_parser.add_argument("-path", action="store", dest="path", help="Input a path to the files", required=True)
 full_run_parser.add_argument("-data", action="store", dest="data", help="Input list of names of the datasets",
                              required=True)
@@ -363,11 +369,13 @@ full_run_parser.add_argument("-pep", action="store", dest="pep", help="Path to f
 full_run_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
 full_run_parser.add_argument("-t", action="store", dest="threads", help="Amount of threads to use for the mapping",
                              required=True)
-full_run_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides, minlen < 4 may lead to error",
+full_run_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA "
+                                                                         "peptides, minlen < 4 may lead to error",
                              default=10)
 full_run_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q value threshold for FIMO results",
                              default=0.1)
-full_run_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction supporting reads for high conf.",
+full_run_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction "
+                                                                                 "supporting reads for high conf.",
                              default=2)
 full_run_parser.set_defaults(func=full_run)
 
