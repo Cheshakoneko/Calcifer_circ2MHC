@@ -106,7 +106,7 @@ def downstream(args):
     # using chimeric junctions from star as ground truth and filter for canonical splice sites #
     calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file)
     # merge results based on conditions and all results per default #
-    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions, ubsj_filter)
+    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions, ubsjr_filter)
     # annotate all results remaining after the strict filters #
     all_filtered_circs = working_dir + "all_circs/two_unique_filtered.txt"
 
