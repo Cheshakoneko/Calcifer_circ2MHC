@@ -118,7 +118,7 @@ def downstream(args):
     
     calcifer_downstream_mirna_modules.mirna_analysis(working_dir, mirna_run)
     
-    calcifer_downstream_orf_modules.orf_detection(working_dir)
+    calcifer_downstream_orf_modules.orf_detection(working_dir, min_aa)
     calcifer_downstream_orf_modules.longest_orf_filtering(working_dir)
     ires_m6a_dict = calcifer_downstream_orf_modules.ires_m6a_prediction(working_dir)
     calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
@@ -149,7 +149,7 @@ def list_mode(args):
     
     calcifer_list_mode_module.mirna_analysis(working_dir, mirna_run)
     
-    calcifer_list_mode_module.orf_detection(working_dir)
+    calcifer_list_mode_module.orf_detection(working_dir, min_aa)
     calcifer_list_mode_module.longest_orf_filtering(working_dir)
     ires_m6a_dict = calcifer_list_mode_module.ires_m6a_prediction(working_dir)
     calcifer_list_mode_module.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
@@ -228,7 +228,7 @@ def full_run(args):
     
     calcifer_downstream_mirna_modules.mirna_analysis(working_dir, mirna_run)
     
-    calcifer_downstream_orf_modules.orf_detection(working_dir)
+    calcifer_downstream_orf_modules.orf_detection(working_dir, min_aa)
     calcifer_downstream_orf_modules.longest_orf_filtering(working_dir)
     ires_m6a_dict = calcifer_downstream_orf_modules.ires_m6a_prediction(working_dir)
     calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
