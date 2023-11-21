@@ -26,29 +26,31 @@ import calcifer_list_mode_module
 def circexplorer2(args):
 
     file_path = args.path
-    dataset = args.data
+    datasets = args.data.split(",")
     star_index = args.star
     genome_file = args.genome
     gene_pred_file = args.gene_pred
     read_type = args.read_type
     cores = args.threads
 
+    for dataset in datasets:
     # change functions based on type of reads #
-    if read_type == "se":
-        working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
-        unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
-        calcifer_circexplorer2_modules.se_star_mapping(working_dir, unzip_trimmed_data, star_index, cores)
 
-    elif read_type == "pe":
-        working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
-        unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
-        calcifer_circexplorer2_modules.pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2,
-                                                       star_index, cores)
+        if read_type == "se":
+            working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
+            unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
+            calcifer_circexplorer2_modules.se_star_mapping(working_dir, unzip_trimmed_data, star_index, cores)
 
-    # function calls for ce2 #
-    calcifer_circexplorer2_modules.ce2_parse(working_dir)
-    calcifer_circexplorer2_modules.ce2_annotate(working_dir, gene_pred_file, genome_file)
-    calcifer_circexplorer2_modules.ce2_initial_filter(working_dir)
+        elif read_type == "pe":
+            working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
+            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
+            calcifer_circexplorer2_modules.pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2,
+                                                           star_index, cores)
+
+        # function calls for ce2 #
+        calcifer_circexplorer2_modules.ce2_parse(working_dir)
+        calcifer_circexplorer2_modules.ce2_annotate(working_dir, gene_pred_file, genome_file)
+        calcifer_circexplorer2_modules.ce2_initial_filter(working_dir)
 
 
 # Main method for ciri2 #
@@ -56,7 +58,7 @@ def circexplorer2(args):
 def ciri2(args):
 
     file_path = args.path
-    dataset = args.data
+    datasets = args.data.split(",")
     bwa_index = args.bwaindex
     genome_path = args.genome
     gtf_file = args.gtf
@@ -64,19 +66,21 @@ def ciri2(args):
     read_type = args.read_type
     cores = args.threads
 
+    for dataset in datasets:
     # change functions based on type of reads #
-    if read_type == "se":
-        working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
-        unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
-        calcifer_ciri2_modules.se_bwa_mapping(working_dir, unzip_trimmed_data, bwa_index, cores)
 
-    elif read_type == "pe":
-        working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
-        unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
-        calcifer_ciri2_modules.pe_bwa_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, bwa_index, cores)
+        if read_type == "se":
+            working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
+            unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
+            calcifer_ciri2_modules.se_bwa_mapping(working_dir, unzip_trimmed_data, bwa_index, cores)
 
-    # function call for ciri2 #
-    calcifer_ciri2_modules.ciri2_find(ciri_path, working_dir, gtf_file, genome_path)
+        elif read_type == "pe":
+            working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
+            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
+            calcifer_ciri2_modules.pe_bwa_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, bwa_index, cores)
+
+        # function call for ciri2 #
+        calcifer_ciri2_modules.ciri2_find(ciri_path, working_dir, gtf_file, genome_path)
 
 
 # Main method for downstream analysis of ce2 and ciri2 results #
@@ -93,13 +97,16 @@ def downstream(args):
     mirna_run = args.mirna
     pep_ref = args.pep
     rbp_db = args.rbp
+    min_aa = args.minlen
+    qval = args.qval
+    ubsjr_filter = args.ubsjr
 
     # create suitable data structure for the results #
     calcifer_downstream_results_modules.data_structure_filtering(working_dir)
     # using chimeric junctions from star as ground truth and filter for canonical splice sites #
     calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file)
     # merge results based on conditions and all results per default #
-    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions)
+    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions, ubsj_filter)
     # annotate all results remaining after the strict filters #
     all_filtered_circs = working_dir + "all_circs/two_unique_filtered.txt"
 
@@ -116,8 +123,8 @@ def downstream(args):
     ires_m6a_dict = calcifer_downstream_orf_modules.ires_m6a_prediction(working_dir)
     calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
     
-    calcifer_downstream_rbp_modules.rbp_analysis_circ(working_dir, rbp_db)
-    calcifer_downstream_rbp_modules.rbp_analysis_bsj(working_dir, rbp_db)
+    calcifer_downstream_rbp_modules.rbp_analysis_circ(working_dir, rbp_db, qval)
+    calcifer_downstream_rbp_modules.rbp_analysis_bsj(working_dir, rbp_db, qval)
 
     calcifer_downstream_results_modules.final_output(working_dir, conditions, mirna_run)
     calcifer_downstream_results_modules.clean_up(working_dir, mirna_run)
@@ -132,6 +139,8 @@ def list_mode(args):
     mirna_run = args.mirna
     pep_ref = args.pep
     rbp_db = args.rbp
+    min_aa = args.minlen
+    qval = args.qval
 
     calcifer_list_mode_module.parental_gene_name(working_dir, crna_list_file, gtf_file)
 
@@ -145,8 +154,8 @@ def list_mode(args):
     ires_m6a_dict = calcifer_list_mode_module.ires_m6a_prediction(working_dir)
     calcifer_list_mode_module.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
     
-    calcifer_list_mode_module.rbp_analysis_circ(working_dir, rbp_db)
-    calcifer_list_mode_module.rbp_analysis_bsj(working_dir, rbp_db)
+    calcifer_list_mode_module.rbp_analysis_circ(working_dir, rbp_db, qval)
+    calcifer_list_mode_module.rbp_analysis_bsj(working_dir, rbp_db, qval)
 
     calcifer_list_mode_module.final_output(working_dir)
 
@@ -173,6 +182,9 @@ def full_run(args):
     pep_ref = args.pep
     rbp_db = args.rbp
     cores = args.threads
+    min_aa = args.minlen
+    qval = args.qval
+    ubsjr_filter = args.ubsjr
 
     for dataset in datasets:
         # bwa and star mapping of the dataset #
@@ -204,7 +216,7 @@ def full_run(args):
     # using chimeric junctions from star as ground truth and filter for canonical splice sites #
     calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file)
     # merge results based on conditions and all results per default #
-    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions)
+    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions, ubsj_filter)
     # annotate all results remaining after the strict filters #
     all_filtered_circs = working_dir + "all_circs/two_unique_filtered.txt"
 
@@ -221,8 +233,8 @@ def full_run(args):
     ires_m6a_dict = calcifer_downstream_orf_modules.ires_m6a_prediction(working_dir)
     calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
     
-    calcifer_downstream_rbp_modules.rbp_analysis_circ(working_dir, rbp_db)
-    calcifer_downstream_rbp_modules.rbp_analysis_bsj(working_dir, rbp_db)
+    calcifer_downstream_rbp_modules.rbp_analysis_circ(working_dir, rbp_db, qval)
+    calcifer_downstream_rbp_modules.rbp_analysis_bsj(working_dir, rbp_db, qval)
 
     calcifer_downstream_results_modules.final_output(working_dir, conditions, mirna_run)
     calcifer_downstream_results_modules.clean_up(working_dir, mirna_run)
@@ -294,6 +306,12 @@ downstream_parser.add_argument("-mirna", action="store", dest="mirna",
 downstream_parser.add_argument("-pep", action="store", dest="pep",
                                help="Path to fasta-file with all pc-transcripts", required=True)
 downstream_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
+downstream_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides, minlen < 4 may lead to error",
+                             default=10)
+downstream_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q value threshold for FIMO results",
+                             default=0.1)
+downstream_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction supporting reads for high conf.",
+                             default=2)
 downstream_parser.set_defaults(func=downstream)
 
 
@@ -308,6 +326,10 @@ list_parser.add_argument("-mirna", action="store", dest="mirna", help="Path to m
 list_parser.add_argument("-pep", action="store", dest="pep", help="Path to fasta-file with all pc-transcripts",
                          required=True)
 list_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
+list_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides, minlen < 4 may lead to error",
+                             default=10)
+list_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q value threshold for FIMO results",
+                             default=0.1)
 list_parser.set_defaults(func=list_mode)
 
 
@@ -341,6 +363,12 @@ full_run_parser.add_argument("-pep", action="store", dest="pep", help="Path to f
 full_run_parser.add_argument("-rbp", action="store", dest="rbp", help="Path to rbp db file", required=True)
 full_run_parser.add_argument("-t", action="store", dest="threads", help="Amount of threads to use for the mapping",
                              required=True)
+full_run_parser.add_argument("-min", action="store", dest="minlen", help="Minimal amino acids lenghts for circRNA peptides, minlen < 4 may lead to error",
+                             default=10)
+full_run_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q value threshold for FIMO results",
+                             default=0.1)
+full_run_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction supporting reads for high conf.",
+                             default=2)
 full_run_parser.set_defaults(func=full_run)
 
 

@@ -136,38 +136,39 @@ def mirna_annotation(gtf_file):
 
 # get the circRNA sequences
 def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
+    genes = Faidx(gene_fasta)
     circ_file = working_dir + "circrna_name_list.tsv"
     circ_rnas = {}
     # keys are start or end position, every start/end can have multiple circRNAs (isoforms) #
     # read in circRNAs with identifier as key #
     with open(circ_file, "r") as circs_in:
+        next(circs_in)
         with open(working_dir + "circ_bsj_seq.fasta", "w") as bsj_seq:
-            next(circs_in)
             for line in circs_in:
                 line_content = line.split()
-                all_pos = line_content[1].split(":")
+                all_pos = line_content[0].split(":")
                 chromosome = all_pos[0]
-                strand = line_content[1].split(":")[2]
+                strand = line_content[0].split(":")[2]
                 positions = all_pos[1].split("-")
                 positions[0] = str(int(positions[0]) + 1)
-                circ_rnas[line_content[1]] = [positions[0], positions[1], line_content[1:]]
+                circ_rnas[line_content[0]] = [positions[0], positions[1], line_content[1:]]
                 # get sequence around bsj +/- 250bp
                 header = "\n>" + line_content[0] + "\n"
-                up_bsj = chromosome + ":" + str(int(positions[0]) - 251) + "-" + str(int(positions[0]) + 24)
-                down_bsj = chromosome + ":" + str(int(positions[1]) - 24) + "-" + str(int(positions[1]) + 251)
+                up_bsj = chromosome + ":" + str(int(positions[0]) - 250) + "-" + str(int(positions[0]) + 24)
+                down_bsj = chromosome + ":" + str(int(positions[1]) - 24) + "-" + str(int(positions[1]) + 250)
                 if strand == "+":
-                    fasta_seq_up = os.popen('samtools faidx ' + gene_fasta + ' ' + up_bsj).read().split()[1:]
+                    fasta_seq_up = str(genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)))
                     full_fasta_seq_up = ""
                     full_fasta_seq_up += ''.join(fasta_seq_up)
-                    fasta_seq_down = os.popen('samtools faidx ' + gene_fasta + ' ' + down_bsj).read().split()[1:]
+                    fasta_seq_down = str(genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)))
                     full_fasta_seq_down = ""
                     full_fasta_seq_down += ''.join(fasta_seq_down)
                 # -i option does not work maybe implement something else!
                 elif strand == "-":
-                    fasta_seq_up = os.popen('samtools faidx ' + gene_fasta + ' ' + up_bsj).read().split()[1:]
+                    fasta_seq_up = str(genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)).reverse.complement)
                     full_fasta_seq_up = ""
                     full_fasta_seq_up += ''.join(fasta_seq_up)
-                    fasta_seq_down = os.popen('samtools faidx ' + gene_fasta + ' ' + down_bsj).read().split()[1:]
+                    fasta_seq_down = str(genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)).reverse.complement)
                     full_fasta_seq_down = ""
                     full_fasta_seq_down += ''.join(fasta_seq_down)
                 bsj_seq.write(header)
@@ -230,7 +231,6 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                 circ_rna_seq_pos[key].append(circ_rna_exons[exon_start][1])
 
     with open(working_dir + "linear_seq.fasta", "w") as circ_seq_out:
-        genes = Faidx(gene_fasta)
         for key in circ_rna_seq_pos.keys():
             if len(circ_rna_seq_pos[key]) > 0:
                 fasta_header = ">" + key
@@ -240,7 +240,7 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                     for exon_pos in circ_rna_seq_pos[key]:
                         chromosome = exon_pos.split(":")[0]
                         position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0]) - 1
+                        start_pos = int(position.split("-")[0])
                         end_pos = int(position.split("-")[1])
                         fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos))
                         full_fasta_seq += ''.join(fasta_seq)
@@ -248,7 +248,7 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                     for exon_pos in circ_rna_seq_pos[key]:
                         chromosome = exon_pos.split(":")[0]
                         position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0]) - 1
+                        start_pos = int(position.split("-")[0])
                         end_pos = int(position.split("-")[1])
                         fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos).reverse.complement)
                         full_fasta_seq = ''.join((fasta_seq, full_fasta_seq))
@@ -291,7 +291,11 @@ def mirna_analysis(working_dir, mirna_run):
     seq_dict = {}
     miranda_cmd = "miranda " + mirna_run + " " + output_dir + "pseudo_circular_seq.fasta -sc 150 -strict -out " + \
                   output_dir + "miranda_circ_res.txt"
-    os.system(miranda_cmd)
+
+    mirna_exist = os.path.isfile(output_dir + "miranda_circ_res.txt")
+    if not mirna_exist:
+        os.system(miranda_cmd)
+
     with open(output_dir + "pseudo_circular_seq.fasta", "r") as fasta_in:
         for line in fasta_in:
             seq_key = line.split(">")[1][:-1]
@@ -348,8 +352,8 @@ def mirna_analysis(working_dir, mirna_run):
 
 
 # use fimo on the pseudo circular circRNA sequence #
-# filter results for q-val < 0.05 #
-def rbp_analysis_circ(working_dir, rbp_db):
+# filter results for q-val < 0.1 (default) #
+def rbp_analysis_circ(working_dir, rbp_db, qval):
     output_dir = working_dir
     rbp_file = rbp_db
     fimo_cmd = "fimo -o " + output_dir + "fimo_circ_out/ " + rbp_file + " " + output_dir + "pseudo_circular_seq.fasta"
@@ -357,7 +361,7 @@ def rbp_analysis_circ(working_dir, rbp_db):
     # use fimo to get rbp binding on circ exon seq first
     os.system(fimo_cmd)
 
-    # filter the fimo results for q-val < 0.1
+    # filter the fimo results for q-val < 0.1 (default)
     with open(output_dir + "filtered_fimo_circ_res.txt", "w") as fimo_out:
         with open(fimo_file, "r") as fimo_in:
             for line in fimo_in:
@@ -366,7 +370,7 @@ def rbp_analysis_circ(working_dir, rbp_db):
                     if line_content[0] == "motif_id":
                         fimo_out.write(line)
                     else:
-                        if float(line_content[8]) <= 0.1:
+                        if float(line_content[8]) <= qval:
                             fimo_out.write(line)
 
     fimo_res_dict = {}
@@ -394,14 +398,14 @@ def rbp_analysis_circ(working_dir, rbp_db):
 
 
 # repeat fimo analysis for sequence around the bsj (and 25 bp into the circRNA on both junction sites #
-def rbp_analysis_bsj(working_dir, rbp_db):
+def rbp_analysis_bsj(working_dir, rbp_db, qval):
     output_dir = working_dir
     rbp_file = rbp_db
     fimo_cmd = "fimo -o " + output_dir + "fimo_bsj_out/ " + rbp_file + " " + output_dir + "circ_bsj_seq.fasta"
     fimo_file = output_dir + "fimo_bsj_out/fimo.tsv"
     os.system(fimo_cmd)
 
-    # filter the fimo results for q-val < 0.1
+    # filter the fimo results for q-val < 0.1 (default)
     with open(output_dir + "filtered_fimo_bsj_res.txt", "w") as fimo_out:
         with open(fimo_file, "r") as fimo_in:
             for line in fimo_in:
@@ -410,7 +414,7 @@ def rbp_analysis_bsj(working_dir, rbp_db):
                     if line_content[0] == "motif_id":
                         fimo_out.write(line)
                     else:
-                        if float(line_content[8]) <= 0.1:
+                        if float(line_content[8]) <= qval:
                             fimo_out.write(line)
 
     fimo_res_dict = {}
@@ -458,15 +462,15 @@ def find_amino_acid(pep_seq, amino_acid):
     return [i for i, ltr in enumerate(pep_seq) if ltr == amino_acid]
 
 
-def orf_detection(working_dir):
+def orf_detection(working_dir, min_aa):
     translation_cycles = ["linear_seq", "pseudo_circular_seq", "multi_cycle_seq"]
     for cycle in translation_cycles:
         out_file = working_dir + str(cycle) + "_complete_orf.pep"
         circ_seq = working_dir + str(cycle) + ".fasta"
-        orf_finder(circ_seq, out_file)
+        orf_finder(circ_seq, out_file, min_aa)
 
 
-def orf_finder(circ_seq, out_file):
+def orf_finder(circ_seq, out_file, min_aa):
     with open(circ_seq, "r") as seq_in:
         with open(out_file, "w") as orf_out:
             line_count = 0
@@ -514,9 +518,9 @@ def orf_finder(circ_seq, out_file):
                             start_pos = start_pos + 1
                             for end_pos in end_pos_list:
                                 if orf_pos == 0:
-                                    if end_pos > start_pos and (end_pos - start_pos) < 10:
+                                    if end_pos > start_pos and (end_pos - start_pos) < min_aa:
                                         orf_pos = 1
-                                    elif (end_pos - start_pos) >= 10:
+                                    elif (end_pos - start_pos) >= min_aa:
                                         orf_pos = str(start_pos) + ":" + str(end_pos)
                                         nuc_start_pos = (start_pos * 3) - 2 + add_base
                                         nuc_end_pos = (end_pos * 3) + 3 + add_base
@@ -877,6 +881,16 @@ def final_output(working_dir):
             parental_gene = line_content[0]
             result_output[circ_id] = [parental_gene]
 
+    # get circRNA sequence length
+    circ_seq_len_dict = {}
+    with open(circ_seq_file, "r") as seq_in:
+        for line in seq_in:
+            header = line[1:]
+            header = header.strip("\n")
+            seq_len = next(seq_in)
+            seq_len = len(seq_len.strip("\n"))
+            circ_seq_len_dict[header] = str(seq_len)
+
     # read in ORF results
     orf_dict = {}
     with open(orf_file, "r") as orf_in:
@@ -919,6 +933,9 @@ def final_output(working_dir):
     # check and collect results for all circRNA IDs
     for circ_rna in result_output.keys():
 
+        if circ_rna in circ_seq_len_dict:
+            result_output[circ_rna].append(circ_seq_len_dict[circ_rna])
+
         if circ_rna in miranda_res_dict:
             result_output[circ_rna].append(miranda_res_dict[circ_rna][0])
             result_output[circ_rna].append(miranda_res_dict[circ_rna][1])
@@ -941,16 +958,16 @@ def final_output(working_dir):
             result_output[circ_rna].append(orf_dict[circ_rna][1])
             result_output[circ_rna].append(orf_dict[circ_rna][2])
         else:
-            result_output[circ_rna].append(3 * "0:0:NA\t")
+            result_output[circ_rna].append(3 * "0:0")
 
         if circ_rna in pep_dict:
-            result_output[circ_rna].append(pep_dict[circ_rna] + "\t")
+            result_output[circ_rna].append(pep_dict[circ_rna])
         else:
-            result_output[circ_rna].append("non_unique\t")
+            result_output[circ_rna].append("non_unique")
 
     # calcifer out write in working dir
     with open(working_dir + "calcifer_output.tab", "w") as calcifer_out:
-        file_header = "circID\tparental_gene\tmirna_binding_site_density\tmost_mirna" \
+        file_header = "circID\tparental_gene\tcirc_seq_len\tmirna_binding_site_density\tmost_mirna" \
                       "\trbp_circ_binding\trbp_bsj_binding\tlinear_seq_orf\tpseudo_circular_seq_orf" \
                       "\tmulti_cycle_seq_orf\tunique_region"
         calcifer_out.write(file_header)

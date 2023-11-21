@@ -13,7 +13,11 @@ def mirna_analysis(working_dir, mirna_run):
     seq_dict = {}
     miranda_cmd = "miranda " + mirna_run + " " + output_dir + "pseudo_circular_seq.fasta -sc 150 -strict -out " + \
                   output_dir + "miranda_circ_res.txt"
-    os.system(miranda_cmd)
+
+    mirna_exist = os.path.isfile(output_dir + "miranda_circ_res.txt")
+    if not mirna_exist:
+        os.system(miranda_cmd)
+
     with open(output_dir + "pseudo_circular_seq.fasta", "r") as fasta_in:
         for line in fasta_in:
             seq_key = line.split(">")[1][:-1]

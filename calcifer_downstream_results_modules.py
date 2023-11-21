@@ -34,6 +34,7 @@ def final_output(working_dir, conditions, mirna_run):
     rbp_bsj_analysis_file = working_dir + "all_circs/rbp_analysis_bsj_res.tab"
     path_to_cons = working_dir + "conditions_circs"
     number_conditions = len(conditions)
+    circ_seq_file = working_dir + "all_circs/linear_seq.fasta"
 
     result_output = {}
     clr_dict = {}
@@ -48,6 +49,16 @@ def final_output(working_dir, conditions, mirna_run):
             parental_gene = line_content[7]
             result_output[circ_id] = [parental_gene, circ_origin, max_unique_bsr]
             clr_dict[circ_id] = [0] * number_conditions
+
+    # get circRNA sequence length
+    circ_seq_len_dict = {}
+    with open(circ_seq_file, "r") as seq_in:
+        for line in seq_in:
+            header = line[1:]
+            header = header.strip("\n")
+            seq_len = next(seq_in)
+            seq_len = len(seq_len.strip("\n"))
+            circ_seq_len_dict[header] = str(seq_len)
     
     # read in ORF results
     orf_dict = {}
@@ -72,7 +83,7 @@ def final_output(working_dir, conditions, mirna_run):
     con_clr_header = ""
     for con in range(number_conditions):
         condition_number = con + 1
-        con_clr_header += "\tcon_" + str(condition_number) + "_pc"
+        con_clr_header += "\tcon_" + str(condition_number) + "_clr"
         con_circ_file = path_to_cons + "/con_" + str(condition_number) + "_filtered.txt"
         with open(con_circ_file, "r") as con_in:
             for line in con_in:
@@ -105,6 +116,9 @@ def final_output(working_dir, conditions, mirna_run):
 
     # check and collect results for all circRNA IDs
     for circ_rna in result_output.keys():
+        if circ_rna in circ_seq_len_dict:
+            result_output[circ_rna].append(circ_seq_len_dict[circ_rna])
+
         if circ_rna in clr_dict:
             result_output[circ_rna].extend(clr_dict[circ_rna])
     
@@ -131,18 +145,18 @@ def final_output(working_dir, conditions, mirna_run):
             result_output[circ_rna].append(orf_dict[circ_rna][1])
             result_output[circ_rna].append(orf_dict[circ_rna][2])
         else:
-            result_output[circ_rna].append(3 * "0:0:NA\t")
+            result_output[circ_rna].append("0:0\t0:0\t0:0")
 
         if circ_rna in pep_dict:
-            result_output[circ_rna].append(pep_dict[circ_rna] + "\t")
+            result_output[circ_rna].append(pep_dict[circ_rna])
         else:
-            result_output[circ_rna].append("non_unique\t")
+            result_output[circ_rna].append("non_unique")
 
     # calcifer out write in working dir
     with open(working_dir + "calcifer_output.tab", "w") as calcifer_out:
-        file_header = "circID\tparental_gene\ttype\tunique_bsr" + con_clr_header + "\tmirna_binding_site_density\tmost_mirna" \
+        file_header = "circID\tparental_gene\ttype\tunique_bsr\tcirc_seq_len" + con_clr_header + "\tmirna_binding_site_density\tmost_mirna" \
                       "\trbp_circ_binding\trbp_bsj_binding\tlinear_seq_orf\tpseudo_circular_seq_orf\tmulti_cycle_seq_orf" \
-                      "\tunique_region"
+                      "\tunique_peptide_regions"
         calcifer_out.write(file_header)
         for circ_rna in result_output.keys():
             converted_output_list = [str(element) for element in result_output[circ_rna]]

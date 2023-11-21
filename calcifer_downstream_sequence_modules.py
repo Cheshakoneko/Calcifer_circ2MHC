@@ -131,6 +131,7 @@ def random_annotation(working_dir, cds_annotation, three_utr_annotation, gene_fa
 # (+ 25 bp from end to start and start to end) and multi cycle sequence (4 * linear seq) #
 # also get sequence around bsj (250 bp + 25 bp into circRNA) for RBP analysis #
 def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
+    genes = Faidx(gene_fasta)
     circ_file = working_dir + "all_circs/two_unique_filtered.txt"
     circ_rnas = {}
     # keys are start or end position, every start/end can have multiple circRNAs (isoforms) #
@@ -147,21 +148,21 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                 circ_rnas[line_content[0]] = [positions[0], positions[1], line_content[1:]]
                 # get sequence around bsj +/- 250bp
                 header = "\n>" + line_content[0] + "\n"
-                up_bsj = chromosome + ":" + str(int(positions[0]) - 251) + "-" + str(int(positions[0]) + 24)
-                down_bsj = chromosome + ":" + str(int(positions[1]) - 24) + "-" + str(int(positions[1]) + 251)
+                up_bsj = chromosome + ":" + str(int(positions[0]) - 250) + "-" + str(int(positions[0]) + 24)
+                down_bsj = chromosome + ":" + str(int(positions[1]) - 24) + "-" + str(int(positions[1]) + 250)
                 if strand == "+":
-                    fasta_seq_up = os.popen('samtools faidx ' + gene_fasta + ' ' + up_bsj).read().split()[1:]
+                    fasta_seq_up = str(genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)))
                     full_fasta_seq_up = ""
                     full_fasta_seq_up += ''.join(fasta_seq_up)
-                    fasta_seq_down = os.popen('samtools faidx ' + gene_fasta + ' ' + down_bsj).read().split()[1:]
+                    fasta_seq_down = str(genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)))
                     full_fasta_seq_down = ""
                     full_fasta_seq_down += ''.join(fasta_seq_down)
                 # -i option does not work maybe implement something else!
                 elif strand == "-":
-                    fasta_seq_up = os.popen('samtools faidx ' + gene_fasta + ' ' + up_bsj).read().split()[1:]
+                    fasta_seq_up = str(genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)).reverse.complement)
                     full_fasta_seq_up = ""
                     full_fasta_seq_up += ''.join(fasta_seq_up)
-                    fasta_seq_down = os.popen('samtools faidx ' + gene_fasta + ' ' + down_bsj).read().split()[1:]
+                    fasta_seq_down = str(genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)).reverse.complement)
                     full_fasta_seq_down = ""
                     full_fasta_seq_down += ''.join(fasta_seq_down)
                 bsj_seq.write(header)
@@ -224,7 +225,6 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                 circ_rna_seq_pos[key].append(circ_rna_exons[exon_start][1])
 
     with open(working_dir + "all_circs/linear_seq.fasta", "w") as circ_seq_out:
-        genes = Faidx(gene_fasta)
         for key in circ_rna_seq_pos.keys():
             if len(circ_rna_seq_pos[key]) > 0:
                 fasta_header = ">" + key
@@ -234,7 +234,7 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                     for exon_pos in circ_rna_seq_pos[key]:
                         chromosome = exon_pos.split(":")[0]
                         position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0]) - 1
+                        start_pos = int(position.split("-")[0])
                         end_pos = int(position.split("-")[1])
                         fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos))
                         full_fasta_seq += ''.join(fasta_seq)
@@ -242,7 +242,7 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                     for exon_pos in circ_rna_seq_pos[key]:
                         chromosome = exon_pos.split(":")[0]
                         position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0]) - 1
+                        start_pos = int(position.split("-")[0])
                         end_pos = int(position.split("-")[1])
                         fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos).reverse.complement)
                         full_fasta_seq = ''.join((fasta_seq, full_fasta_seq))

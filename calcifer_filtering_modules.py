@@ -201,7 +201,7 @@ def chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file):
                 
                 
 # merging the resulting circRNAs from same condition datasets and all datasets #
-def merging_results(working_dir, datasets, conditions):
+def merging_results(working_dir, datasets, conditions, ubsjr_filter):
 
     all_output = working_dir + "all_circs/"
     conditions_output = working_dir + "conditions_circs/"
@@ -278,10 +278,10 @@ def merging_results(working_dir, datasets, conditions):
                          + str(all_filtered[key][6]) + "\n"
             out.write(out_string)
 
-    # filter all circRNAs for >= 2 unique bs-reads (CIGAR-based) or if possible found in >= 2 datasets #
+    # filter all circRNAs for >= 2 unique bs-reads (CIGAR-based, default) or if possible found in >= 2 datasets #
     with open(all_output + "two_unique_filtered.txt", "w") as out:
         for key in all_filtered.keys():
-            if all_filtered[key][4] > 1:
+            if all_filtered[key][4] >= ubsjr_filter:
                 out_string = key + "\t" + str(all_filtered[key][0]) + "\t" + str(all_filtered[key][1]) + "\t" \
                          + str(all_filtered[key][2]) + "\t" + str(all_filtered[key][3]) + "\t" \
                          + str(all_filtered[key][4]) + "\t" + str(all_filtered[key][5]) + "\t" \

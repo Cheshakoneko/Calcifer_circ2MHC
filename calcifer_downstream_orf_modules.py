@@ -34,16 +34,16 @@ def find_amino_acid(pep_seq, amino_acid):
 
 
 # execute ORF finder function on all three sequence types
-def orf_detection(working_dir):
+def orf_detection(working_dir, min_aa):
     translation_cycles = ["linear_seq", "pseudo_circular_seq", "multi_cycle_seq"]
     for cycle in translation_cycles:
         out_file = working_dir + "all_circs/" + str(cycle) + "_complete_orf.pep"
         circ_seq = working_dir + "all_circs/" + str(cycle) + ".fasta"
-        orf_finder(circ_seq, out_file)
+        orf_finder(circ_seq, out_file, min_aa)
 
 
 # detect all putative ORfs on all three reading frames and generate output
-def orf_finder(circ_seq, out_file):
+def orf_finder(circ_seq, out_file, min_aa):
     with open(circ_seq, "r") as seq_in:
         with open(out_file, "w") as orf_out:
             line_count = 0
@@ -91,9 +91,9 @@ def orf_finder(circ_seq, out_file):
                             start_pos = start_pos + 1
                             for end_pos in end_pos_list:
                                 if orf_pos == 0:
-                                    if end_pos > start_pos and (end_pos - start_pos) < 10:
+                                    if end_pos > start_pos and (end_pos - start_pos) < min_aa:
                                         orf_pos = 1
-                                    elif (end_pos - start_pos) >= 10:
+                                    elif (end_pos - start_pos) >= min_aa:
                                         orf_pos = str(start_pos) + ":" + str(end_pos)
                                         nuc_start_pos = (start_pos * 3) - 2 + add_base
                                         nuc_end_pos = (end_pos * 3) + 3 + add_base
