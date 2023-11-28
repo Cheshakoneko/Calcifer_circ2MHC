@@ -181,6 +181,8 @@ calcifer downstream:
 >-ubsjr_filter   Minimum unique backsplice junction supporting reads for high confidence circRNAs (optional, default = 2)
 
 >-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
+
+>-strand Strand of the read data (yes, no, reverse). Needed if read data is stranded, used for htseq-count.
  
 
 
@@ -222,6 +224,8 @@ calcifer full_run:
 >-ubsjr_filter   Minimum unique backsplice junction supporting reads for high confidence circRNAs (optional, default = 2)
 
 >-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
+
+>-strand Strand of the read data (yes, no, reverse). Needed if read data is stranded, used for htseq-count.
 
 
 
