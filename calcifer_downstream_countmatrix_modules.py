@@ -9,7 +9,7 @@ import os
 # generate count matrix for linear and circular RNAs, also generate coldata based on conditions #
 # count matrix is also generated if it is a single condition dataset #
 # counts can also be used for other analysis beside DGE! #
-def deseq2_analysis(working_dir, datasets, conditions, condition_name, read_type, gtf_file):
+def deseq2_analysis(working_dir, datasets, conditions, condition_name, read_type, gtf_file, strand):
     col_path = working_dir + "coldata.csv"
     counts_path = working_dir + "count_matrix.csv"
     id_gene_path = working_dir + "all_circs/id_gene_names.tab"
@@ -59,12 +59,12 @@ def deseq2_analysis(working_dir, datasets, conditions, condition_name, read_type
             indexing_cmd = "samtools index " + working_dir + rep + "/Aligned.sortedByCoord.out.bam"
             os.system(indexing_cmd)
             if read_type == "se":
-                htseq_count_cmd = "htseq-count -f bam --stranded=no " + working_dir + rep \
+                htseq_count_cmd = "htseq-count -f bam --stranded=" + strand + " " + working_dir + rep \
                                   + "/Aligned.sortedByCoord.out.bam " + \
                                   gtf_file + " > " + working_dir + rep + "/count_" + rep + ".txt "
                 os.system(htseq_count_cmd)
             else:
-                htseq_count_cmd = "htseq-count -f bam --stranded=no --order=pos " + working_dir + rep \
+                htseq_count_cmd = "htseq-count -f bam --stranded=" + strand + " --order=pos " + working_dir + rep \
                                   + "/Aligned.sortedByCoord.out.bam " + gtf_file + " > " \
                                   + working_dir + rep + "/count_" + rep + ".txt "
                 os.system(htseq_count_cmd)

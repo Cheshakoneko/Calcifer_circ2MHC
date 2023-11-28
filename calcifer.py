@@ -100,6 +100,7 @@ def downstream(args):
     min_aa = args.minlen
     qval = args.qval
     ubsjr_filter = args.ubsjr
+    strand = args.strand
 
     # create suitable data structure for the results #
     calcifer_downstream_results_modules.data_structure_filtering(working_dir)
@@ -111,7 +112,7 @@ def downstream(args):
     all_filtered_circs = working_dir + "all_circs/two_unique_filtered.txt"
 
     calcifer_downstream_countmatrix_modules.deseq2_analysis(working_dir, datasets, conditions, condition_name,
-                                                            read_type, gtf_file)
+                                                            read_type, gtf_file, strand)
 
     cds_anno, three_utr_anno, exon_anno, exon_endings = calcifer_downstream_sequence_modules.mirna_annotation(gtf_file)
     calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_fasta, exon_anno, exon_endings)
@@ -185,6 +186,7 @@ def full_run(args):
     min_aa = args.minlen
     qval = args.qval
     ubsjr_filter = args.ubsjr
+    strand = args.strand
 
     for dataset in datasets:
         # bwa and star mapping of the dataset #
@@ -216,12 +218,12 @@ def full_run(args):
     # using chimeric junctions from star as ground truth and filter for canonical splice sites #
     calcifer_filtering_modules.chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file)
     # merge results based on conditions and all results per default #
-    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions, ubsj_filter)
+    calcifer_filtering_modules.merging_results(working_dir, datasets, conditions, ubsjr_filter)
     # annotate all results remaining after the strict filters #
     all_filtered_circs = working_dir + "all_circs/two_unique_filtered.txt"
 
     calcifer_downstream_countmatrix_modules.deseq2_analysis(working_dir, datasets, conditions, condition_name,
-                                                            read_type, gtf_file)
+                                                            read_type, gtf_file, strand)
 
     cds_anno, three_utr_anno, exon_anno, exon_endings = calcifer_downstream_sequence_modules.mirna_annotation(gtf_file)
     calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_fasta, exon_anno, exon_endings)
@@ -317,6 +319,8 @@ downstream_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help=
 downstream_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction "
                                                                                    "supporting reads for high conf.",
                                default=2)
+downstream_parser.add_argument("-strand", action="store", dest="strand", help="Input if reads are stranded or not ["
+                                                                              "yes, no, reverse]", default="no")
 downstream_parser.set_defaults(func=downstream)
 
 
@@ -377,6 +381,8 @@ full_run_parser.add_argument("-rbp_cutoff", action="store", dest="qval", help="q
 full_run_parser.add_argument("-ubsjr_filter", action="store", dest="ubsjr", help="Minimum unique backsplice junction "
                                                                                  "supporting reads for high conf.",
                              default=2)
+full_run_parser.add_argument("-strand", action="store", dest="strand", help="Input if reads are stranded or not [yes, "
+                                                                            "no, reverse]", default="no")
 full_run_parser.set_defaults(func=full_run)
 
 
