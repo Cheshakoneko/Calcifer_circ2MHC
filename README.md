@@ -182,7 +182,7 @@ calcifer downstream:
 
 >-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
 
->-strand Strand of the read data (yes, no, reverse). Needed if read data is stranded, used for htseq-count.
+>-strand Strand of the read data (yes, no, reverse). Needed if read data is stranded, used for htseq-count (default = "no")
  
 
 
@@ -225,7 +225,7 @@ calcifer full_run:
 
 >-min   Minimum amino acid length for circRNA peptides (needs to be >= 4) (optional, default = 10)
 
->-strand Strand of the read data (yes, no, reverse). Needed if read data is stranded, used for htseq-count.
+>-strand Strand of the read data (yes, no, reverse). Needed if read data is stranded, used for htseq-count (default = "no")
 
 
 
