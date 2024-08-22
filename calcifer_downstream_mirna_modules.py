@@ -6,7 +6,7 @@ import os
 # module with function for the mirna binding analysis #
 
 
-# miRNA binding analysis with miranda on the pseudo circular sequence #
+# miRNA target site analysis with miranda on the pseudo circular sequence #
 def mirna_analysis(working_dir, mirna_run):
 
     output_dir = working_dir + "all_circs/"

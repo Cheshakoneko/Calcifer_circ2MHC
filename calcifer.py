@@ -3,6 +3,7 @@
 # import argument parser #
 # enables the usage of calcifer like a command line tool #
 import argparse
+import os
 
 # import calcifer modules #
 import calcifer_general_modules
@@ -33,23 +34,27 @@ def circexplorer2(args):
     read_type = args.read_type
     cores = args.threads
 
+
     for dataset in datasets:
     # change functions based on type of reads #
 
         if read_type == "se":
             working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
-            unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
+            unzip_trimmed_data = calcifer_general_modules.se_flexbar(cores, dataset, working_dir)
+
             calcifer_circexplorer2_modules.se_star_mapping(working_dir, unzip_trimmed_data, star_index, cores)
 
         elif read_type == "pe":
             working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
-            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
+            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(cores, dataset, working_dir)
+
             calcifer_circexplorer2_modules.pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2,
                                                            star_index, cores)
 
-        # function calls for ce2 #
+            # function calls for ce2 #
         calcifer_circexplorer2_modules.ce2_parse(working_dir)
         calcifer_circexplorer2_modules.ce2_annotate(working_dir, gene_pred_file, genome_file)
+
         calcifer_circexplorer2_modules.ce2_initial_filter(working_dir)
 
 
@@ -71,16 +76,19 @@ def ciri2(args):
 
         if read_type == "se":
             working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
-            unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
+            unzip_trimmed_data = calcifer_general_modules.se_flexbar(cores, dataset, working_dir)
+
             calcifer_ciri2_modules.se_bwa_mapping(working_dir, unzip_trimmed_data, bwa_index, cores)
 
         elif read_type == "pe":
             working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
-            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
+            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(cores, dataset, working_dir)
+
             calcifer_ciri2_modules.pe_bwa_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, bwa_index, cores)
 
         # function call for ciri2 #
         calcifer_ciri2_modules.ciri2_find(ciri_path, working_dir, gtf_file, genome_path)
+
 
 
 # Main method for downstream analysis of ce2 and ciri2 results #
@@ -116,13 +124,14 @@ def downstream(args):
 
     cds_anno, three_utr_anno, exon_anno, exon_endings = calcifer_downstream_sequence_modules.mirna_annotation(gtf_file)
     calcifer_downstream_sequence_modules.circ_exon_seq(working_dir, genome_fasta, exon_anno, exon_endings)
-    
+
+    # detect potential miRNA target sites with miRanda #
     calcifer_downstream_mirna_modules.mirna_analysis(working_dir, mirna_run)
     
     calcifer_downstream_orf_modules.orf_detection(working_dir, min_aa)
     calcifer_downstream_orf_modules.longest_orf_filtering(working_dir)
     ires_m6a_dict = calcifer_downstream_orf_modules.ires_m6a_prediction(working_dir)
-    calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
+    calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict, min_aa)
     
     calcifer_downstream_rbp_modules.rbp_analysis_circ(working_dir, rbp_db, qval)
     calcifer_downstream_rbp_modules.rbp_analysis_bsj(working_dir, rbp_db, qval)
@@ -153,7 +162,7 @@ def list_mode(args):
     calcifer_list_mode_module.orf_detection(working_dir, min_aa)
     calcifer_list_mode_module.longest_orf_filtering(working_dir)
     ires_m6a_dict = calcifer_list_mode_module.ires_m6a_prediction(working_dir)
-    calcifer_list_mode_module.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
+    calcifer_list_mode_module.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict, min_aa)
     
     calcifer_list_mode_module.rbp_analysis_circ(working_dir, rbp_db, qval)
     calcifer_list_mode_module.rbp_analysis_bsj(working_dir, rbp_db, qval)
@@ -192,12 +201,12 @@ def full_run(args):
         # bwa and star mapping of the dataset #
         if read_type == "se":
             working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
-            unzip_trimmed_data = calcifer_general_modules.se_flexbar(dataset, working_dir)
+            unzip_trimmed_data = calcifer_general_modules.se_flexbar(cores, dataset, working_dir)
             calcifer_circexplorer2_modules.se_star_mapping(working_dir, unzip_trimmed_data, star_index, cores)
             calcifer_ciri2_modules.se_bwa_mapping(working_dir, unzip_trimmed_data, bwa_index, cores)
         elif read_type == "pe":
             working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
-            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(dataset, working_dir)
+            unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(cores, dataset, working_dir)
             calcifer_circexplorer2_modules.pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2,
                                                            star_index, cores)
             calcifer_ciri2_modules.pe_bwa_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, bwa_index,
@@ -233,7 +242,7 @@ def full_run(args):
     calcifer_downstream_orf_modules.orf_detection(working_dir, min_aa)
     calcifer_downstream_orf_modules.longest_orf_filtering(working_dir)
     ires_m6a_dict = calcifer_downstream_orf_modules.ires_m6a_prediction(working_dir)
-    calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict)
+    calcifer_downstream_orf_modules.unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict, min_aa)
     
     calcifer_downstream_rbp_modules.rbp_analysis_circ(working_dir, rbp_db, qval)
     calcifer_downstream_rbp_modules.rbp_analysis_bsj(working_dir, rbp_db, qval)
@@ -252,6 +261,7 @@ parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers()
 
 # specify different modes for the pipeline with needed arguments and helps #
+# CIRCexplorer2 mode for a single circRNA detection with CIRCexplorer2 #
 circexplorer2_parser = subparsers.add_parser('circexplorer2',
                                              usage="calcifer.py circexplorer2 -path [path] -data [name] -star [index] "
                                                    "-genome [fasta] -gene_pred [txt] -rt [se/pe] -t [threads]")
@@ -260,7 +270,7 @@ circexplorer2_parser.add_argument("-data", action="store", dest="data", help="In
 circexplorer2_parser.add_argument("-star", action="store", dest="star", help="Path to star-index", required=True)
 circexplorer2_parser.add_argument("-genome", action="store", dest="genome", help="Path to genome-fasta", required=True)
 circexplorer2_parser.add_argument("-gene_pred", action="store", dest="gene_pred", help="Path to ref gene_pred.txt "
-                                                                                       "(generate before run!)",
+                                                                                       "(generate before run)",
                                   required=True)
 circexplorer2_parser.add_argument("-rt", action="store", dest="read_type",
                                   help="Type of the reads, se for single-end and pe for paired-end accepted",

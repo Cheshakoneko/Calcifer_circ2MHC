@@ -73,14 +73,37 @@ def rbp_analysis_bsj(working_dir, rbp_db, qval):
                         if float(line_content[8]) <= qval:
                             fimo_out.write(line)
 
-    fimo_res_dict = {}
+    fimo_res_dict_side_1 = {}
+    fimo_res_dict_side_2 = {}
     with open(output_dir + "filtered_fimo_bsj_res.txt", "r") as rbp_in:
         for line in rbp_in:
             line_content = line.split()
-            if line_content[2] in fimo_res_dict:
-                fimo_res_dict[line_content[2]].append(line_content[1])
-            else:
-                fimo_res_dict[line_content[2]] = [line_content[1]]
+            if ":side1" in line_content[2]:
+                if line_content[2][:-6] in fimo_res_dict_side_1:
+                    fimo_res_dict_side_1[line_content[2][:-6]].append(line_content[1])
+                else:
+                    fimo_res_dict_side_1[line_content[2][:-6]] = [line_content[1]]
+            if ":side2" in line_content[2]:
+                if line_content[2][:-6] in fimo_res_dict_side_2:
+                    fimo_res_dict_side_2[line_content[2][:-6]].append(line_content[1])
+                else:
+                    fimo_res_dict_side_2[line_content[2][:-6]] = [line_content[1]]
+
+    fimo_res_dict = {}
+    fimo_both_dict = {}
+
+    for key in fimo_res_dict_side_1.keys():
+        if key not in fimo_res_dict_side_2:
+            fimo_res_dict[key] = fimo_res_dict_side_1[key]
+        elif key in fimo_res_dict_side_2:
+            fimo_res_dict[key] = fimo_res_dict_side_1[key] + fimo_res_dict_side_2[key]
+            rbp_set_1 = set(fimo_res_dict_side_1[key])
+            rbp_set_2 = set(fimo_res_dict_side_2[key])
+            in_both = rbp_set_1.intersection(rbp_set_2)
+            if len(in_both) > 0:
+                fimo_both_dict[key] = []
+                for i in in_both:
+                    fimo_both_dict[key].append(i)
 
     with open(output_dir + "rbp_analysis_bsj_res.tab", "w") as rbp_out:
         for key in fimo_res_dict.keys():
@@ -95,4 +118,10 @@ def rbp_analysis_bsj(working_dir, rbp_db, qval):
                 rbp_output_string += out_count
             final_rbp_out = key + "\t" + rbp_output_string[:-1] + "\n"
             rbp_out.write(final_rbp_out)
+
+    with open(output_dir + "rbp_analysis_bsj_both_res.tab", "w") as rbp_out:
+        for key in fimo_both_dict.keys():
+            circ_id = key
+            rbps = ",".join(fimo_both_dict[key])
+            rbp_out.write(circ_id + "\t" + rbps + "\n")
 

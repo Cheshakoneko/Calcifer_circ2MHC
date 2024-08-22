@@ -91,9 +91,9 @@ def orf_finder(circ_seq, out_file, min_aa):
                             start_pos = start_pos + 1
                             for end_pos in end_pos_list:
                                 if orf_pos == 0:
-                                    if end_pos > start_pos and (end_pos - start_pos) < min_aa:
+                                    if int(end_pos) > (int(start_pos) - 1) and (int(end_pos) - (int(start_pos) - 1)) < int(min_aa):
                                         orf_pos = 1
-                                    elif (end_pos - start_pos) >= min_aa:
+                                    elif ((int(end_pos)) - (int(start_pos) - 1)) >= int(min_aa):
                                         orf_pos = str(start_pos) + ":" + str(end_pos)
                                         nuc_start_pos = (start_pos * 3) - 2 + add_base
                                         nuc_end_pos = (end_pos * 3) + 3 + add_base
@@ -177,7 +177,43 @@ def longest_orf_filtering(working_dir):
                     orf_number = line.split("_")[0][5:]
                     orf_position = new_header[3] + "-" + new_header[4].split()[0]
                 else:
-                    pep_seq += line[:-1]
+                    pep_seq += line.replace("\n", "")
+
+            if len(pep_seq) > 0 and "partial" not in header_line:
+                # check if orf for this circRNA is unique or redundant (multi cycle squence short orfs)
+                if circ_id in unique_orf_dict:
+                    if pep_seq not in unique_orf_dict[circ_id]:
+                        unique_orf_dict[circ_id].append(pep_seq)
+                        # save if orf is from linear, pseudo circular or multi cycle circ rna sequence
+                        seq_type_dict[circ_id + pep_seq] = [cycle, orf_position]
+                        if circ_id in circ_orf_dict:
+                            circ_orf_dict[circ_id][cycle_count][0] += 1
+                            if len(pep_seq) > circ_orf_dict[circ_id][cycle_count][1]:
+                                circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                                circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                                circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+                        else:
+                            circ_orf_dict[circ_id] = [[0, 0, "NA", ""], [0, 0, "NA", ""], [0, 0, "NA", ""]]
+                            circ_orf_dict[circ_id][cycle_count][0] += 1
+                            circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                            circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                            circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+                else:
+                    unique_orf_dict[circ_id] = [pep_seq]
+                    seq_type_dict[circ_id + pep_seq] = [cycle, orf_position]
+                    if circ_id in circ_orf_dict:
+                        circ_orf_dict[circ_id][cycle_count][0] += 1
+                        if len(pep_seq) > circ_orf_dict[circ_id][cycle_count][1]:
+                            circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                            circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                            circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+                    else:
+                        circ_orf_dict[circ_id] = [[0, 0, "NA", ""], [0, 0, "NA", ""], [0, 0, "NA", ""]]
+                        circ_orf_dict[circ_id][cycle_count][0] += 1
+                        circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                        circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                        circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+
         cycle_count += 1
     with open(working_dir + "all_circs/circ_orfs.tab", "w") as orf_res_out:
         orf_res_out.write("circID\tlinear_orf\tpseudo_circular_orf\tmulti_cycle_orf")
@@ -342,11 +378,11 @@ def ires_m6a_prediction(working_dir):
 
 # detect unique peptide subsequences on putative translated circRNA peptides
 # (original algorithm implemented by Justin Murtagh from schulz lab)
-def unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict):
+def unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict, min_aa):
     file_path = working_dir + "all_circs/"
     db_file = pep_ref
     query_file = file_path + "orf_seq.pep"
-    matchlength = 10
+    matchlength = int(min_aa)
     mmumer_res = file_path + "Maxmatch.mums"
     non_un = file_path + "Non_Unique_Regions.bed"
     quer = file_path + "Query.bed"

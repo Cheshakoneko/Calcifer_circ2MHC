@@ -21,12 +21,16 @@ def parental_gene_name(working_dir, crna_list_file, gtf_file):
         with open(working_dir + crna_list_file, "r") as crna_in:
             for line in crna_in:
                 line_content = line.split(":")
-                chromosome = line_content[0][3:]
+                chromosome = line_content[0]
                 start_pos = int(line_content[1].split("-")[0])
                 end_pos = int(line_content[1].split("-")[1])
                 strand = line_content[2].split("\n")[0]
                 gene_start_name = data.gene_names_at_locus(contig=chromosome, position=start_pos)
+                if len(gene_start_name) == 0:
+                    gene_start_name = data.gene_names_at_locus(contig=chromosome[3:], position=start_pos)
                 gene_end_name = data.gene_names_at_locus(contig=chromosome, position=end_pos)
+                if len(gene_end_name) == 0:
+                    gene_end_name = data.gene_names_at_locus(contig=chromosome[3:], position=start_pos)
                 gene_names = list(set(gene_start_name + gene_end_name))
                 if len(gene_names) == 0:
                     gene_names.append("NA")
@@ -37,7 +41,7 @@ def parental_gene_name(working_dir, crna_list_file, gtf_file):
                     output_name = output_name[1:]
                 if output_name[-1] == "/":
                     output_name = output_name[:-1]
-                crna_out.write("\n" + output_name + "\t" + "chr" + str(chromosome) + ":" + str(start_pos) + "-"
+                crna_out.write("\n" + output_name + "\t" + str(chromosome) + ":" + str(start_pos) + "-"
                                + str(end_pos) + ":" + strand)
 
 
@@ -120,21 +124,26 @@ def mirna_annotation(gtf_file):
                     three_utr_annotation[key_pos] = '"' + key_pos + '"'
 
                 # get position of all exons
+                # also get exon numbers for circRNA naming
                 elif information_type == "exon":
                     if line_content[0] + ":" + str(feature_start) in exon_annotation:
                         if line_content[0] + ":" + str(feature_end) not in exon_annotation[line_content[0] + ":" +
-                                                                                           str(feature_start)]:
-                            exon_annotation[line_content[0] + ":" + str(feature_start)].append(line_content[0] + ":" +
-                                                                                               str(feature_end))
+                                                                                           str(feature_start)][0]:
+                            exon_annotation[line_content[0] + ":" + str(feature_start)][0].append(line_content[0] + ":"
+                                                                                                  + str(feature_end))
                     else:
-                        exon_annotation[line_content[0] + ":" + str(feature_start)] = [line_content[0] + ":" +
-                                                                                       str(feature_end)]
-                    exon_endings[line_content[0] + ":" + str(feature_end)] = str(feature_start)
+                        exon_annotation[line_content[0] + ":" + str(feature_start)] = [[line_content[0] + ":" +
+                                                                                       str(feature_end)],
+                                                                                       line_content[17]]
+                    exon_endings[line_content[0] + ":" + str(feature_end)] = [str(feature_start), line_content[17]]
 
     return cds_annotation, three_utr_annotation, exon_annotation, exon_endings
 
 
-# get the circRNA sequences
+# get all exons which are included in all found circRNAs #
+# create fasta-files with the linear sequence, psuedo_circular sequence #
+# (+ 25 bp from end to start and start to end) and multi cycle sequence (4 * linear seq) #
+# also get sequence around bsj (250 bp + 25 bp into circRNA) for RBP analysis #
 def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
     genes = Faidx(gene_fasta)
     circ_file = working_dir + "circrna_name_list.tsv"
@@ -146,14 +155,14 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
         with open(working_dir + "circ_bsj_seq.fasta", "w") as bsj_seq:
             for line in circs_in:
                 line_content = line.split()
-                all_pos = line_content[0].split(":")
+                all_pos = line_content[1].split(":")
                 chromosome = all_pos[0]
-                strand = line_content[0].split(":")[2]
+                strand = line_content[1].split(":")[2]
                 positions = all_pos[1].split("-")
                 positions[0] = str(int(positions[0]) + 1)
-                circ_rnas[line_content[0]] = [positions[0], positions[1], line_content[1:]]
+                circ_rnas[line_content[1]] = [positions[0], positions[1], line_content[0]]
                 # get sequence around bsj +/- 250bp
-                header = "\n>" + line_content[0] + "\n"
+                header = "\n>" + line_content[1]
                 up_bsj = chromosome + ":" + str(int(positions[0]) - 250) + "-" + str(int(positions[0]) + 24)
                 down_bsj = chromosome + ":" + str(int(positions[1]) - 24) + "-" + str(int(positions[1]) + 250)
                 if strand == "+":
@@ -165,15 +174,17 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                     full_fasta_seq_down += ''.join(fasta_seq_down)
                 # -i option does not work maybe implement something else!
                 elif strand == "-":
-                    fasta_seq_up = str(genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)).reverse.complement)
+                    fasta_seq_up = str(
+                        genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)).reverse.complement)
                     full_fasta_seq_up = ""
                     full_fasta_seq_up += ''.join(fasta_seq_up)
-                    fasta_seq_down = str(genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)).reverse.complement)
+                    fasta_seq_down = str(
+                        genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)).reverse.complement)
                     full_fasta_seq_down = ""
                     full_fasta_seq_down += ''.join(fasta_seq_down)
-                bsj_seq.write(header)
+                bsj_seq.write(header + ":side1\n")
                 bsj_seq.write(full_fasta_seq_up)
-                bsj_seq.write(header)
+                bsj_seq.write(header + ":side2\n")
                 bsj_seq.write(full_fasta_seq_down)
 
     circ_rna_seq_pos = {}
@@ -192,20 +203,23 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
             if len(circ_rna_exons) == 0:
                 ident_pos_end = chrom + ":" + str(pos)
                 if ident_pos_end in exon_endings:
-                    real_exon_start = exon_endings[ident_pos_end]
+                    real_exon_start = exon_endings[ident_pos_end][0]
+                    exon_number = exon_endings[ident_pos_end][1]
                     if int(real_exon_start) < pos:
                         start_exon = start
                         end_point = pos
                         circ_rna_starts.append(int(start_exon))
+                        # add exon number here (and also if in exon start)
                         circ_rna_exons[start_exon] = [int(end_point), chrom + ":" + str(start_exon) + "-" +
-                                                      str(end_point)]
+                                                      str(end_point) + ":" + exon_number]
             end_point = -1
             ident_pos = chrom + ":" + str(pos)
             # check for full exons in circRNA
             if ident_pos in exon_anno:
                 start_exon = pos
                 end_point = 0
-                exon_ending_list = exon_anno[ident_pos]
+                exon_ending_list = exon_anno[ident_pos][0]
+                exon_number = exon_anno[ident_pos][1]
                 # only take largest version of a given exon (i.e. largest end point inside a circ)
                 for i in exon_ending_list:
                     end_pos = int(i.split(":")[1])
@@ -213,56 +227,92 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                         end_point = end_pos
                 if end_point > pos:
                     circ_rna_starts.append(int(pos))
-                    circ_rna_exons[pos] = [int(end_point), chrom + ":" + str(pos) + "-" + str(end_point)]
+                    circ_rna_exons[pos] = [int(end_point), chrom + ":" + str(pos) + "-" + str(end_point) + ":"
+                                           + exon_number]
         # add partial exon sequence at the end of circRNA
         if end_point == 0:
             circ_rna_starts.append(int(start_exon))
-            circ_rna_exons[start_exon] = [int(pos), chrom + ":" + str(start_exon) + "-" + str(pos)]
+            circ_rna_exons[start_exon] = [int(pos), chrom + ":" + str(start_exon) + "-" + str(pos) + ":" + exon_number]
         if len(circ_rna_starts) == 0:
             circ_rna_starts.append(int(start))
-            circ_rna_exons[start] = [int(end), chrom + ":" + str(start) + "-" + str(end)]
+            circ_rna_exons[start] = [int(end), chrom + ":" + str(start) + "-" + str(end) + ":NA"]
 
         circ_rna_seq_pos[key] = []
         sorted_exon_starts = sorted(circ_rna_starts)
         prev_exon_end = 0
+        circ_rna_end = int(key.split(":")[1].split("-")[1])
         for exon_start in sorted_exon_starts:
+            putative_end = circ_rna_exons[exon_start][0]
             if exon_start > prev_exon_end:
                 prev_exon_end = circ_rna_exons[exon_start][0]
                 circ_rna_seq_pos[key].append(circ_rna_exons[exon_start][1])
+            # there is the rare case that an exon in front of the circRNA end overlaps with the real last exon
+            # e.g. the backspliced exon. In this case we only consider the exon which was also involved in the
+            # back-splicing
+            elif putative_end == circ_rna_end and prev_exon_end != circ_rna_end:
+                circ_rna_seq_pos[key] = circ_rna_seq_pos[key][:-1]
+                prev_exon_end = circ_rna_exons[exon_start][0]
+                circ_rna_seq_pos[key].append(circ_rna_exons[exon_start][1])
 
-    with open(working_dir + "linear_seq.fasta", "w") as circ_seq_out:
-        for key in circ_rna_seq_pos.keys():
-            if len(circ_rna_seq_pos[key]) > 0:
-                fasta_header = ">" + key
-                full_fasta_seq = ""
-                strand = key.split(":")[2]
-                if strand == "+":
-                    for exon_pos in circ_rna_seq_pos[key]:
-                        chromosome = exon_pos.split(":")[0]
-                        position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0])
-                        end_pos = int(position.split("-")[1])
-                        fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos))
-                        full_fasta_seq += ''.join(fasta_seq)
-                elif strand == "-":
-                    for exon_pos in circ_rna_seq_pos[key]:
-                        chromosome = exon_pos.split(":")[0]
-                        position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0])
-                        end_pos = int(position.split("-")[1])
-                        fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos).reverse.complement)
-                        full_fasta_seq = ''.join((fasta_seq, full_fasta_seq))
-                circ_seq_out.write("\n" + fasta_header + "\n")
-                circ_seq_out.write(full_fasta_seq.upper())
+    # get linear circRNA sequence and exon numbers between start and end of each circRNA
+    with open(working_dir + "circ_naming.txt", "w") as naming:
+        with open(working_dir + "linear_seq.fasta", "w") as circ_seq_out:
+            for key in circ_rna_seq_pos.keys():
+                if len(circ_rna_seq_pos[key]) > 0:
+                    exon_number_list = []
+                    fasta_header = ">" + key
+                    full_fasta_seq = ""
+                    strand = key.split(":")[2]
+                    if strand == "+":
+                        for exon_pos in circ_rna_seq_pos[key]:
+                            chromosome = exon_pos.split(":")[0]
+                            position = exon_pos.split(":")[1]
+                            start_pos = int(position.split("-")[0])
+                            end_pos = int(position.split("-")[1])
+                            if len(exon_pos.split(":")[2]) == 0:
+                            	exon_number = "NA"
+                            elif "NA" not in exon_pos.split(":")[2]:
+                            	exon_number = int(exon_pos.split(":")[2][1:-2])
+                            else:
+                            	exon_number = "NA"
+                            # double check sequence content in comparing the exon number with all already added exons
+                            # the sequence is only added if exon number is greater then all others and not already
+                            # included in the sequence
+                            exon_number_list.append(exon_number)
+                            fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos))
+                            full_fasta_seq += ''.join(fasta_seq)
+                    elif strand == "-":
+                        for exon_pos in circ_rna_seq_pos[key]:
+                            chromosome = exon_pos.split(":")[0]
+                            position = exon_pos.split(":")[1]
+                            start_pos = int(position.split("-")[0])
+                            end_pos = int(position.split("-")[1])
+                            if len(exon_pos.split(":")[2]) == 0:
+                            	exon_number = "NA"
+                            elif "NA" not in exon_pos.split(":")[2]:
+                            	exon_number = int(exon_pos.split(":")[2][1:-2])
+                            else:
+                            	exon_number = "NA"
+                            # double check sequence content in comparing the exon number with all already added exons
+                            # the sequence is only added if exon number is smaller then all others and not already
+                            # included in the sequence
+                            exon_number_list.append(exon_number)
+                            fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos).reverse.complement)
+                            full_fasta_seq = ''.join((fasta_seq, full_fasta_seq))
+                    circ_seq_out.write("\n" + fasta_header + "\n")
+                    circ_seq_out.write(full_fasta_seq.upper())
+                    final_exon_number_string = "(" + ','.join(str(e) for e in exon_number_list) + ")"
+                    naming.write("\n" + key + "\t" + final_exon_number_string)
     os.system("sed -i \'1d\' " + working_dir + "linear_seq.fasta")
+    os.system("sed -i \'1d\' " + working_dir + "circ_naming.txt")
 
     with open(working_dir + "linear_seq.fasta", "r") as circ:
         with open(working_dir + "pseudo_circular_seq.fasta", "w") as seq_out:
             line_count = 0
             for line1 in circ:
-                header = line1[:-1]
+                header = line1.replace("\n", "")
                 line2 = next(circ)
-                circ_line = line2[:-1]
+                circ_line = line2.replace("\n", "")
                 seq = circ_line[-25:] + circ_line + circ_line[:25]
                 if line_count != 0:
                     seq_out.write("\n" + header + "\n" + seq)
@@ -274,9 +324,9 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
         with open(working_dir + "multi_cycle_seq.fasta", "w") as seq_out:
             line_count = 0
             for line1 in circ:
-                header = line1[:-1]
+                header = line1.replace("\n", "")
                 line2 = next(circ)
-                seq = 4 * line2[:-1]
+                seq = 4 * line2.replace("\n", "")
                 if line_count != 0:
                     seq_out.write("\n" + header + "\n" + seq)
                 else:
@@ -377,7 +427,7 @@ def rbp_analysis_circ(working_dir, rbp_db, qval):
     with open(output_dir + "filtered_fimo_circ_res.txt", "r") as rbp_in:
         for line in rbp_in:
             line_content = line.split()
-            if line_content[1] in fimo_res_dict:
+            if line_content[2] in fimo_res_dict:
                 fimo_res_dict[line_content[2]].append(line_content[1])
             else:
                 fimo_res_dict[line_content[2]] = [line_content[1]]
@@ -417,14 +467,37 @@ def rbp_analysis_bsj(working_dir, rbp_db, qval):
                         if float(line_content[8]) <= qval:
                             fimo_out.write(line)
 
-    fimo_res_dict = {}
+    fimo_res_dict_side_1 = {}
+    fimo_res_dict_side_2 = {}
     with open(output_dir + "filtered_fimo_bsj_res.txt", "r") as rbp_in:
         for line in rbp_in:
             line_content = line.split()
-            if line_content[1] in fimo_res_dict:
-                fimo_res_dict[line_content[2]].append(line_content[1])
-            else:
-                fimo_res_dict[line_content[2]] = [line_content[1]]
+            if ":side1" in line_content[2]:
+                if line_content[2][:-6] in fimo_res_dict_side_1:
+                    fimo_res_dict_side_1[line_content[2][:-6]].append(line_content[1])
+                else:
+                    fimo_res_dict_side_1[line_content[2][:-6]] = [line_content[1]]
+            if ":side2" in line_content[2]:
+                if line_content[2][:-6] in fimo_res_dict_side_2:
+                    fimo_res_dict_side_2[line_content[2][:-6]].append(line_content[1])
+                else:
+                    fimo_res_dict_side_2[line_content[2][:-6]] = [line_content[1]]
+
+    fimo_res_dict = {}
+    fimo_both_dict = {}
+
+    for key in fimo_res_dict_side_1.keys():
+        if key not in fimo_res_dict_side_2:
+            fimo_res_dict[key] = fimo_res_dict_side_1[key]
+        elif key in fimo_res_dict_side_2:
+            fimo_res_dict[key] = fimo_res_dict_side_1[key] + fimo_res_dict_side_2[key]
+            rbp_set_1 = set(fimo_res_dict_side_1[key])
+            rbp_set_2 = set(fimo_res_dict_side_2[key])
+            in_both = rbp_set_1.intersection(rbp_set_2)
+            if len(in_both) > 0:
+                fimo_both_dict[key] = []
+                for i in in_both:
+                    fimo_both_dict[key].append(i)
 
     with open(output_dir + "rbp_analysis_bsj_res.tab", "w") as rbp_out:
         for key in fimo_res_dict.keys():
@@ -439,6 +512,13 @@ def rbp_analysis_bsj(working_dir, rbp_db, qval):
                 rbp_output_string += out_count
             final_rbp_out = key + "\t" + rbp_output_string[:-1] + "\n"
             rbp_out.write(final_rbp_out)
+
+    with open(output_dir + "rbp_analysis_bsj_both_res.tab", "w") as rbp_out:
+        for key in fimo_both_dict.keys():
+            circ_id = key
+            rbps = ",".join(fimo_both_dict[key])
+            rbp_out.write(circ_id + "\t" + rbps + "\n")
+
 
 
 def translate(seq):
@@ -518,9 +598,9 @@ def orf_finder(circ_seq, out_file, min_aa):
                             start_pos = start_pos + 1
                             for end_pos in end_pos_list:
                                 if orf_pos == 0:
-                                    if end_pos > start_pos and (end_pos - start_pos) < min_aa:
+                                    if int(end_pos) > (int(start_pos) - 1) and (int(end_pos) - (int(start_pos) - 1)) < int(min_aa):
                                         orf_pos = 1
-                                    elif (end_pos - start_pos) >= min_aa:
+                                    elif ((int(end_pos)) - (int(start_pos) - 1)) >= int(min_aa):
                                         orf_pos = str(start_pos) + ":" + str(end_pos)
                                         nuc_start_pos = (start_pos * 3) - 2 + add_base
                                         nuc_end_pos = (end_pos * 3) + 3 + add_base
@@ -603,7 +683,43 @@ def longest_orf_filtering(working_dir):
                     orf_number = line.split("_")[0][5:]
                     orf_position = new_header[3] + "-" + new_header[4].split()[0]
                 else:
-                    pep_seq += line[:-1]
+                    pep_seq += line.replace("\n", "")
+
+            if len(pep_seq) > 0 and "partial" not in header_line:
+                # check if orf for this circRNA is unique or redundant (multi cycle squence short orfs)
+                if circ_id in unique_orf_dict:
+                    if pep_seq not in unique_orf_dict[circ_id]:
+                        unique_orf_dict[circ_id].append(pep_seq)
+                        # save if orf is from linear, pseudo circular or multi cycle circ rna sequence
+                        seq_type_dict[circ_id + pep_seq] = [cycle, orf_position]
+                        if circ_id in circ_orf_dict:
+                            circ_orf_dict[circ_id][cycle_count][0] += 1
+                            if len(pep_seq) > circ_orf_dict[circ_id][cycle_count][1]:
+                                circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                                circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                                circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+                        else:
+                            circ_orf_dict[circ_id] = [[0, 0, "NA", ""], [0, 0, "NA", ""], [0, 0, "NA", ""]]
+                            circ_orf_dict[circ_id][cycle_count][0] += 1
+                            circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                            circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                            circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+                else:
+                    unique_orf_dict[circ_id] = [pep_seq]
+                    seq_type_dict[circ_id + pep_seq] = [cycle, orf_position]
+                    if circ_id in circ_orf_dict:
+                        circ_orf_dict[circ_id][cycle_count][0] += 1
+                        if len(pep_seq) > circ_orf_dict[circ_id][cycle_count][1]:
+                            circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                            circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                            circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+                    else:
+                        circ_orf_dict[circ_id] = [[0, 0, "NA", ""], [0, 0, "NA", ""], [0, 0, "NA", ""]]
+                        circ_orf_dict[circ_id][cycle_count][0] += 1
+                        circ_orf_dict[circ_id][cycle_count][1] = len(pep_seq)
+                        circ_orf_dict[circ_id][cycle_count][2] = orf_number
+                        circ_orf_dict[circ_id][cycle_count][3] = pep_seq
+
         cycle_count += 1
     with open(working_dir + "circ_orfs.tab", "w") as orf_res_out:
         orf_res_out.write("circID\tlinear_orf\tpseudo_circular_orf\tmulti_cycle_orf")
@@ -765,13 +881,13 @@ def ires_m6a_prediction(working_dir):
     return ires_m6a_dict
 
 
-def unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict):
+def unique_peptides_analysis(working_dir, pep_ref, ires_m6a_dict, min_aa):
     # cite justin murtagh from schulz lab
     file_path = working_dir
     db_file = pep_ref
     # "/home/andre/mouse_heart_data/EC_data/gencode.vM25.pc_translations.fa"
     query_file = file_path + "orf_seq.pep"
-    matchlength = 10
+    matchlength = min_aa
     mmumer_res = file_path + "Maxmatch.mums"
     non_un = file_path + "Non_Unique_Regions.bed"
     quer = file_path + "Query.bed"
@@ -867,8 +983,10 @@ def final_output(working_dir):
     orf_file = working_dir + "circ_orfs.tab"
     miranda_file = working_dir + "analysed_miranda_circ_res.txt"
     unique_pep_file = working_dir + "unique_circ_pep.tab"
+    rbp_bsj_both_file = working_dir + "rbp_analysis_bsj_both_res.tab"
     rbp_circ_analysis_file = working_dir + "rbp_analysis_circ_res.tab"
     rbp_bsj_analysis_file = working_dir + "rbp_analysis_bsj_res.tab"
+    circ_seq_file = working_dir + "linear_seq.fasta"
 
     result_output = {}
 
@@ -930,6 +1048,12 @@ def final_output(working_dir):
             line_content = line.split()
             rbp_bsj_dict[line_content[0]] = line_content[1]
 
+    rbp_both_dict = {}
+    with open(rbp_bsj_both_file, "r") as rbp_in:
+        for line in rbp_in:
+            line_content = line.split()
+            rbp_both_dict[line_content[0]] = line_content[1]
+
     # check and collect results for all circRNA IDs
     for circ_rna in result_output.keys():
 
@@ -953,12 +1077,17 @@ def final_output(working_dir):
         else:
             result_output[circ_rna].append("no_rbp_binding")
 
+        if circ_rna in rbp_both_dict:
+            result_output[circ_rna].append(rbp_both_dict[circ_rna])
+        else:
+            result_output[circ_rna].append("no_rbp_both_bsj")
+
         if circ_rna in orf_dict:
             result_output[circ_rna].append(orf_dict[circ_rna][0])
             result_output[circ_rna].append(orf_dict[circ_rna][1])
             result_output[circ_rna].append(orf_dict[circ_rna][2])
         else:
-            result_output[circ_rna].append(3 * "0:0")
+            result_output[circ_rna].append("0:0\t0:0\t0:0")
 
         if circ_rna in pep_dict:
             result_output[circ_rna].append(pep_dict[circ_rna])
@@ -968,7 +1097,7 @@ def final_output(working_dir):
     # calcifer out write in working dir
     with open(working_dir + "calcifer_output.tab", "w") as calcifer_out:
         file_header = "circID\tparental_gene\tcirc_seq_len\tmirna_binding_site_density\tmost_mirna" \
-                      "\trbp_circ_binding\trbp_bsj_binding\tlinear_seq_orf\tpseudo_circular_seq_orf" \
+                      "\trbp_circ_binding\trbp_bsj_binding\trbp_both_bsj\tlinear_seq_orf\tpseudo_circular_seq_orf" \
                       "\tmulti_cycle_seq_orf\tunique_region"
         calcifer_out.write(file_header)
         for circ_rna in result_output.keys():
@@ -981,49 +1110,49 @@ def final_output(working_dir):
 # remove all not needed files which were created in the analysis #
 # move all relevant results into specific folders for better organisation # 
 def clean_up(working_dir, mirna_run):
-    dir_exists = os.path.exists(working_dir + "all_circs/sub_result_dir/")
+    dir_exists = os.path.exists(working_dir + "sub_result_dir/")
     if not dir_exists:
-        res_dir = "mkdir " + working_dir + "all_circs/sub_result_dir"
+        res_dir = "mkdir " + working_dir + "sub_result_dir"
         os.system(res_dir)
     if mirna_run != "n":
-        dir_exists = os.path.exists(working_dir + "all_circs/sub_result_dir/mirna_miranda_res_files/")
+        dir_exists = os.path.exists(working_dir + "sub_result_dir/mirna_miranda_res_files/")
         if not dir_exists:
-            mirna_res_dir = "mkdir " + working_dir + "all_circs/sub_result_dir/mirna_miranda_res_files"
+            mirna_res_dir = "mkdir " + working_dir + "sub_result_dir/mirna_miranda_res_files"
             os.system(mirna_res_dir)
-        move_mirna_res_cmd = "mv " + working_dir + "all_circs/*mir* " + working_dir + "all_circs/sub_result_dir/mirna_miranda_res_files/"
+        move_mirna_res_cmd = "mv " + working_dir + "*mir* " + working_dir + "sub_result_dir/mirna_miranda_res_files/"
         os.system(move_mirna_res_cmd)
     
-    dir_exists = os.path.exists(working_dir + "all_circs/sub_result_dir/rbp_fimo_res_files/")
+    dir_exists = os.path.exists(working_dir + "sub_result_dir/rbp_fimo_res_files/")
     if not dir_exists:
-        rbp_res_dir = "mkdir " + working_dir + "all_circs/sub_result_dir/rbp_fimo_res_files"
+        rbp_res_dir = "mkdir " + working_dir + "sub_result_dir/rbp_fimo_res_files"
         os.system(rbp_res_dir)
     else:
-        remove_old_res = "rm -r " + working_dir + "all_circs/sub_result_dir/rbp_fimo_res_files/*fimo*"
+        remove_old_res = "rm -r " + working_dir + "sub_result_dir/rbp_fimo_res_files/*fimo*"
         os.system(remove_old_res)
-    move_rbp_res_cmd_1 = "mv " + working_dir + "all_circs/*fimo* " + working_dir + "all_circs/sub_result_dir/rbp_fimo_res_files/"
-    move_rbp_res_cmd_2 = "mv " + working_dir + "all_circs/*rbp* " + working_dir + "all_circs/sub_result_dir/rbp_fimo_res_files/"
+    move_rbp_res_cmd_1 = "mv " + working_dir + "*fimo* " + working_dir + "sub_result_dir/rbp_fimo_res_files/"
+    move_rbp_res_cmd_2 = "mv " + working_dir + "*rbp* " + working_dir + "sub_result_dir/rbp_fimo_res_files/"
     os.system(move_rbp_res_cmd_1)
     os.system(move_rbp_res_cmd_2)
     
-    dir_exists = os.path.exists(working_dir + "all_circs/sub_result_dir/orf_res_files/")
+    dir_exists = os.path.exists(working_dir + "sub_result_dir/orf_res_files/")
     if not dir_exists:
-        orf_res_dir = "mkdir " + working_dir + "all_circs/sub_result_dir/orf_res_files"
+        orf_res_dir = "mkdir " + working_dir + "sub_result_dir/orf_res_files"
         os.system(orf_res_dir)
-    move_orf_res_cmd_1 = "mv " + working_dir + "all_circs/*seq* " + working_dir + "all_circs/sub_result_dir/orf_res_files/"
-    move_orf_res_cmd_2 = "mv " + working_dir + "all_circs/*orf* " + working_dir + "all_circs/sub_result_dir/orf_res_files/"
-    move_orf_res_cmd_3 = "mv " + working_dir + "all_circs/*prediction* " + working_dir + "all_circs/sub_result_dir/orf_res_files/"
+    move_orf_res_cmd_1 = "mv " + working_dir + "*seq* " + working_dir + "sub_result_dir/orf_res_files/"
+    move_orf_res_cmd_2 = "mv " + working_dir + "*orf* " + working_dir + "sub_result_dir/orf_res_files/"
+    move_orf_res_cmd_3 = "mv " + working_dir + "*prediction* " + working_dir + "sub_result_dir/orf_res_files/"
     os.system(move_orf_res_cmd_1)
     os.system(move_orf_res_cmd_2)
     os.system(move_orf_res_cmd_3)
     
-    dir_exists = os.path.exists(working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/")
+    dir_exists = os.path.exists(working_dir + "sub_result_dir/unique_peptide_res_files/")
     if not dir_exists:
-        unique_peptide_res_dir = "mkdir " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files"
+        unique_peptide_res_dir = "mkdir " + working_dir + "sub_result_dir/unique_peptide_res_files"
         os.system(unique_peptide_res_dir)
-    move_unique_peptide_res_cmd_1= "mv " + working_dir + "all_circs/unique* " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
-    move_unique_peptide_res_cmd_2= "mv " + working_dir + "all_circs/*Unique* " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
-    move_unique_peptide_res_cmd_3= "mv " + working_dir + "all_circs/*.mums " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
-    move_unique_peptide_res_cmd_4= "mv " + working_dir + "all_circs/Query.bed " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_1= "mv " + working_dir + "unique* " + working_dir + "sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_2= "mv " + working_dir + "*Unique* " + working_dir + "sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_3= "mv " + working_dir + "*.mums " + working_dir + "sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_4= "mv " + working_dir + "Query.bed " + working_dir + "sub_result_dir/unique_peptide_res_files/"
     os.system(move_unique_peptide_res_cmd_1)
     os.system(move_unique_peptide_res_cmd_2)
     os.system(move_unique_peptide_res_cmd_3)

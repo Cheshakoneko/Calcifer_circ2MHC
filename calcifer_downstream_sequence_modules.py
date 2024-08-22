@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import random
-from pyfaidx import Fasta
 from pyfaidx import Faidx
 
 
@@ -88,42 +86,20 @@ def mirna_annotation(gtf_file):
                     three_utr_annotation[key_pos] = '"' + key_pos + '"'
 
                 # get position of all exons
+                # also get exon numbers for circRNA naming
                 elif information_type == "exon":
                     if line_content[0] + ":" + str(feature_start) in exon_annotation:
                         if line_content[0] + ":" + str(feature_end) not in exon_annotation[line_content[0] + ":" +
-                                                                                           str(feature_start)]:
-                            exon_annotation[line_content[0] + ":" + str(feature_start)].append(line_content[0] + ":" +
-                                                                                               str(feature_end))
+                                                                                           str(feature_start)][0]:
+                            exon_annotation[line_content[0] + ":" + str(feature_start)][0].append(line_content[0] + ":"
+                                                                                                  + str(feature_end))
                     else:
-                        exon_annotation[line_content[0] + ":" + str(feature_start)] = [line_content[0] + ":" +
-                                                                                       str(feature_end)]
-                    exon_endings[line_content[0] + ":" + str(feature_end)] = str(feature_start)
+                        exon_annotation[line_content[0] + ":" + str(feature_start)] = [[line_content[0] + ":" +
+                                                                                       str(feature_end)],
+                                                                                       line_content[17]]
+                    exon_endings[line_content[0] + ":" + str(feature_end)] = [str(feature_start), line_content[17]]
 
     return cds_annotation, three_utr_annotation, exon_annotation, exon_endings
-
-
-# unused function to get random 3'utr and cds annotations to test for miRNA binding density #
-# compare these two densities against miRNA density on circRNAs
-def random_annotation(working_dir, cds_annotation, three_utr_annotation, gene_fasta):
-    random.seed(13)
-    rnd_cds = random.sample(cds_annotation.values(), k=1000)
-    rnd_three_utr = random.sample(three_utr_annotation.values(), k=1000)
-    with open(working_dir + "all_circs/rnd_cds_seq.fasta", "w") as cds_seq_out:
-        for seq_pos in rnd_cds:
-            sequence = os.popen('samtools faidx ' + gene_fasta + ' ' + seq_pos).read().split()[1:]
-            out_sequence = ''.join(sequence)
-            header = ">CDS_" + seq_pos[1:-1]
-            cds_seq_out.write("\n" + header + "\n")
-            cds_seq_out.write(str(out_sequence))
-    os.system("sed -i \'1d\' " + working_dir + "all_circs/rnd_cds_seq.fasta")
-    with open(working_dir + "all_circs/rnd_three_utr_seq.fasta", "w") as three_utr_seq_out:
-        for seq_pos in rnd_three_utr:
-            sequence = os.popen('samtools faidx ' + gene_fasta + ' ' + seq_pos).read().split()[1:]
-            out_sequence = ''.join(sequence)
-            header = ">3UTR_" + seq_pos[1:-1]
-            three_utr_seq_out.write("\n" + header + "\n")
-            three_utr_seq_out.write(str(out_sequence))
-    os.system("sed -i \'1d\' " + working_dir + "all_circs/rnd_three_utr_seq.fasta")
 
 
 # get all exons which are included in all found circRNAs #
@@ -147,7 +123,7 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                 positions[0] = str(int(positions[0]) + 1)
                 circ_rnas[line_content[0]] = [positions[0], positions[1], line_content[1:]]
                 # get sequence around bsj +/- 250bp
-                header = "\n>" + line_content[0] + "\n"
+                header = "\n>" + line_content[0]
                 up_bsj = chromosome + ":" + str(int(positions[0]) - 250) + "-" + str(int(positions[0]) + 24)
                 down_bsj = chromosome + ":" + str(int(positions[1]) - 24) + "-" + str(int(positions[1]) + 250)
                 if strand == "+":
@@ -159,15 +135,17 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                     full_fasta_seq_down += ''.join(fasta_seq_down)
                 # -i option does not work maybe implement something else!
                 elif strand == "-":
-                    fasta_seq_up = str(genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)).reverse.complement)
+                    fasta_seq_up = str(
+                        genes.fetch(chromosome, (int(positions[0]) - 250), (int(positions[0]) + 24)).reverse.complement)
                     full_fasta_seq_up = ""
                     full_fasta_seq_up += ''.join(fasta_seq_up)
-                    fasta_seq_down = str(genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)).reverse.complement)
+                    fasta_seq_down = str(
+                        genes.fetch(chromosome, (int(positions[1]) - 24), (int(positions[1]) + 250)).reverse.complement)
                     full_fasta_seq_down = ""
                     full_fasta_seq_down += ''.join(fasta_seq_down)
-                bsj_seq.write(header)
+                bsj_seq.write(header + ":side1\n")
                 bsj_seq.write(full_fasta_seq_up)
-                bsj_seq.write(header)
+                bsj_seq.write(header + ":side2\n")
                 bsj_seq.write(full_fasta_seq_down)
 
     circ_rna_seq_pos = {}
@@ -186,20 +164,23 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
             if len(circ_rna_exons) == 0:
                 ident_pos_end = chrom + ":" + str(pos)
                 if ident_pos_end in exon_endings:
-                    real_exon_start = exon_endings[ident_pos_end]
+                    real_exon_start = exon_endings[ident_pos_end][0]
+                    exon_number = exon_endings[ident_pos_end][1]
                     if int(real_exon_start) < pos:
                         start_exon = start
                         end_point = pos
                         circ_rna_starts.append(int(start_exon))
+                        # add exon number here (and also if in exon start)
                         circ_rna_exons[start_exon] = [int(end_point), chrom + ":" + str(start_exon) + "-" +
-                                                      str(end_point)]
+                                                      str(end_point) + ":" + exon_number]
             end_point = -1
             ident_pos = chrom + ":" + str(pos)
             # check for full exons in circRNA
             if ident_pos in exon_anno:
                 start_exon = pos
                 end_point = 0
-                exon_ending_list = exon_anno[ident_pos]
+                exon_ending_list = exon_anno[ident_pos][0]
+                exon_number = exon_anno[ident_pos][1]
                 # only take largest version of a given exon (i.e. largest end point inside a circ)
                 for i in exon_ending_list:
                     end_pos = int(i.split(":")[1])
@@ -207,73 +188,108 @@ def circ_exon_seq(working_dir, gene_fasta, exon_anno, exon_endings):
                         end_point = end_pos
                 if end_point > pos:
                     circ_rna_starts.append(int(pos))
-                    circ_rna_exons[pos] = [int(end_point), chrom + ":" + str(pos) + "-" + str(end_point)]
+                    circ_rna_exons[pos] = [int(end_point), chrom + ":" + str(pos) + "-" + str(end_point) + ":"
+                                           + exon_number]
         # add partial exon sequence at the end of circRNA
         if end_point == 0:
             circ_rna_starts.append(int(start_exon))
-            circ_rna_exons[start_exon] = [int(pos), chrom + ":" + str(start_exon) + "-" + str(pos)]
+            circ_rna_exons[start_exon] = [int(pos), chrom + ":" + str(start_exon) + "-" + str(pos) + ":" + exon_number]
         if len(circ_rna_starts) == 0:
             circ_rna_starts.append(int(start))
-            circ_rna_exons[start] = [int(end), chrom + ":" + str(start) + "-" + str(end)]
+            circ_rna_exons[start] = [int(end), chrom + ":" + str(start) + "-" + str(end) + ":NA"]
 
         circ_rna_seq_pos[key] = []
         sorted_exon_starts = sorted(circ_rna_starts)
         prev_exon_end = 0
+        circ_rna_end = int(key.split(":")[1].split("-")[1])
         for exon_start in sorted_exon_starts:
+            putative_end = circ_rna_exons[exon_start][0]
             if exon_start > prev_exon_end:
                 prev_exon_end = circ_rna_exons[exon_start][0]
                 circ_rna_seq_pos[key].append(circ_rna_exons[exon_start][1])
+            # there is the rare case that an exon in front of the circRNA end overlaps with the real last exon
+            # e.g. the backspliced exon. In this case we only consider the exon which was also involved in the
+            # back-splicing
+            elif putative_end == circ_rna_end and prev_exon_end != circ_rna_end:
+                circ_rna_seq_pos[key] = circ_rna_seq_pos[key][:-1]
+                prev_exon_end = circ_rna_exons[exon_start][0]
+                circ_rna_seq_pos[key].append(circ_rna_exons[exon_start][1])
 
-    with open(working_dir + "all_circs/linear_seq.fasta", "w") as circ_seq_out:
-        for key in circ_rna_seq_pos.keys():
-            if len(circ_rna_seq_pos[key]) > 0:
-                fasta_header = ">" + key
-                full_fasta_seq = ""
-                strand = key.split(":")[2]
-                if strand == "+":
-                    for exon_pos in circ_rna_seq_pos[key]:
-                        chromosome = exon_pos.split(":")[0]
-                        position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0])
-                        end_pos = int(position.split("-")[1])
-                        fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos))
-                        full_fasta_seq += ''.join(fasta_seq)
-                elif strand == "-":
-                    for exon_pos in circ_rna_seq_pos[key]:
-                        chromosome = exon_pos.split(":")[0]
-                        position = exon_pos.split(":")[1]
-                        start_pos = int(position.split("-")[0])
-                        end_pos = int(position.split("-")[1])
-                        fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos).reverse.complement)
-                        full_fasta_seq = ''.join((fasta_seq, full_fasta_seq))
-                circ_seq_out.write("\n" + fasta_header + "\n")
-                circ_seq_out.write(full_fasta_seq.upper())
+    # get linear circRNA sequence and exon numbers between start and end of each circRNA
+    with open(working_dir + "all_circs/circ_naming.txt", "w") as naming:
+        with open(working_dir + "all_circs/linear_seq.fasta", "w") as circ_seq_out:
+            for key in circ_rna_seq_pos.keys():
+                if len(circ_rna_seq_pos[key]) > 0:
+                    exon_number_list = []
+                    fasta_header = ">" + key
+                    full_fasta_seq = ""
+                    strand = key.split(":")[2]
+                    if strand == "+":
+                        for exon_pos in circ_rna_seq_pos[key]:
+                            chromosome = exon_pos.split(":")[0]
+                            position = exon_pos.split(":")[1]
+                            start_pos = int(position.split("-")[0])
+                            end_pos = int(position.split("-")[1])
+                            if len(exon_pos.split(":")[2]) == 0:
+                            	exon_number = "NA"
+                            elif "NA" not in exon_pos.split(":")[2]:
+                            	exon_number = int(exon_pos.split(":")[2][1:-2])
+                            else:
+                            	exon_number = "NA"
+                            # double check sequence content in comparing the exon number with all already added exons
+                            # the sequence is only added if exon number is greater then all others and not already
+                            # included in the sequence
+                            exon_number_list.append(exon_number)
+                            fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos))
+                            full_fasta_seq += ''.join(fasta_seq)
+                    elif strand == "-":
+                        for exon_pos in circ_rna_seq_pos[key]:
+                            chromosome = exon_pos.split(":")[0]
+                            position = exon_pos.split(":")[1]
+                            start_pos = int(position.split("-")[0])
+                            end_pos = int(position.split("-")[1])
+                            if len(exon_pos.split(":")[2]) == 0:
+                            	exon_number = "NA"
+                            elif "NA" not in exon_pos.split(":")[2]:
+                            	exon_number = int(exon_pos.split(":")[2][1:-2])
+                            else:
+                            	exon_number = "NA"
+                            # double check sequence content in comparing the exon number with all already added exons
+                            # the sequence is only added if exon number is smaller then all others and not already
+                            # included in the sequence
+                            exon_number_list.append(exon_number)
+                            fasta_seq = str(genes.fetch(chromosome, start_pos, end_pos).reverse.complement)
+                            full_fasta_seq = ''.join((fasta_seq, full_fasta_seq))
+                    circ_seq_out.write("\n" + fasta_header + "\n")
+                    circ_seq_out.write(full_fasta_seq.upper())
+                    final_exon_number_string = "(" + ','.join(str(e) for e in exon_number_list) + ")"
+                    naming.write("\n" + key + "\t" + final_exon_number_string)
     os.system("sed -i \'1d\' " + working_dir + "all_circs/linear_seq.fasta")
+    os.system("sed -i \'1d\' " + working_dir + "all_circs/circ_naming.txt")
 
     with open(working_dir + "all_circs/linear_seq.fasta", "r") as circ:
         with open(working_dir + "all_circs/pseudo_circular_seq.fasta", "w") as seq_out:
             line_count = 0
             for line1 in circ:
-                header = line1[:-1]
+                header = line1.replace("\n", "")
                 line2 = next(circ)
-                circ_line = line2[:-1]
+                circ_line = line2.replace("\n", "")
                 seq = circ_line[-25:] + circ_line + circ_line[:25]
                 if line_count != 0:
                     seq_out.write("\n" + header + "\n" + seq)
                 else:
                     seq_out.write(header + "\n" + seq)
                     line_count += 1
-                    
+
     with open(working_dir + "all_circs/linear_seq.fasta", "r") as circ:
         with open(working_dir + "all_circs/multi_cycle_seq.fasta", "w") as seq_out:
             line_count = 0
             for line1 in circ:
-                header = line1[:-1]
+                header = line1.replace("\n", "")
                 line2 = next(circ)
-                seq = 4 * line2[:-1]
+                seq = 4 * line2.replace("\n", "")
                 if line_count != 0:
                     seq_out.write("\n" + header + "\n" + seq)
                 else:
                     seq_out.write(header + "\n" + seq)
                     line_count += 1
-

@@ -35,6 +35,7 @@ def pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, sta
         os.system(star_mapping_cmd)
 
 
+# CIRCexplorer2 detection of circRNAs #
 # parse all back-spliced-junctions out of the chimeric junctions #
 def ce2_parse(working_dir):
     ce2_parse_cmd = "CIRCexplorer2 parse -t STAR " + working_dir + "Chimeric.out.junction -b " + working_dir \

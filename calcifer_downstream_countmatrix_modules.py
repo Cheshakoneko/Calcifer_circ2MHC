@@ -10,10 +10,6 @@ import os
 # count matrix is also generated if it is a single condition dataset #
 # counts can also be used for other analysis beside DGE! #
 def deseq2_analysis(working_dir, datasets, conditions, condition_name, read_type, gtf_file, strand):
-    col_path = working_dir + "coldata.csv"
-    counts_path = working_dir + "count_matrix.csv"
-    id_gene_path = working_dir + "all_circs/id_gene_names.tab"
-    clr_path = working_dir + "all_percent_circularized.csv"
     dataset_count = 0
     condition_count = 0
 

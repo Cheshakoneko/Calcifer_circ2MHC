@@ -32,6 +32,7 @@ def final_output(working_dir, conditions, mirna_run):
     unique_pep_file = working_dir + "all_circs/unique_circ_pep.tab"
     rbp_circ_analysis_file = working_dir + "all_circs/rbp_analysis_circ_res.tab"
     rbp_bsj_analysis_file = working_dir + "all_circs/rbp_analysis_bsj_res.tab"
+    rbp_bsj_both_file = working_dir + "all_circs/rbp_analysis_bsj_both_res.tab"
     path_to_cons = working_dir + "conditions_circs"
     number_conditions = len(conditions)
     circ_seq_file = working_dir + "all_circs/linear_seq.fasta"
@@ -114,6 +115,12 @@ def final_output(working_dir, conditions, mirna_run):
             line_content = line.split()
             rbp_bsj_dict[line_content[0]] = line_content[1]
 
+    rbp_both_dict = {}
+    with open(rbp_bsj_both_file, "r") as rbp_in:
+        for line in rbp_in:
+            line_content = line.split()
+            rbp_both_dict[line_content[0]] = line_content[1]
+
     # check and collect results for all circRNA IDs
     for circ_rna in result_output.keys():
         if circ_rna in circ_seq_len_dict:
@@ -140,6 +147,11 @@ def final_output(working_dir, conditions, mirna_run):
         else:
             result_output[circ_rna].append("no_rbp_binding")
 
+        if circ_rna in rbp_both_dict:
+            result_output[circ_rna].append(rbp_both_dict[circ_rna])
+        else:
+            result_output[circ_rna].append("no_rbp_both_bsj")
+
         if circ_rna in orf_dict:
             result_output[circ_rna].append(orf_dict[circ_rna][0])
             result_output[circ_rna].append(orf_dict[circ_rna][1])
@@ -155,7 +167,7 @@ def final_output(working_dir, conditions, mirna_run):
     # calcifer out write in working dir
     with open(working_dir + "calcifer_output.tab", "w") as calcifer_out:
         file_header = "circID\tparental_gene\ttype\tunique_bsr\tcirc_seq_len" + con_clr_header + "\tmirna_binding_site_density\tmost_mirna" \
-                      "\trbp_circ_binding\trbp_bsj_binding\tlinear_seq_orf\tpseudo_circular_seq_orf\tmulti_cycle_seq_orf" \
+                      "\trbp_circ_binding\trbp_bsj_binding\trbp_both_bsj\tlinear_seq_orf\tpseudo_circular_seq_orf\tmulti_cycle_seq_orf" \
                       "\tunique_peptide_regions"
         calcifer_out.write(file_header)
         for circ_rna in result_output.keys():
@@ -213,10 +225,10 @@ def clean_up(working_dir, mirna_run):
     if not dir_exists:
         unique_peptide_res_dir = "mkdir " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files"
         os.system(unique_peptide_res_dir)
-    move_unique_peptide_res_cmd_1= "mv " + working_dir + "all_circs/unique* " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
-    move_unique_peptide_res_cmd_2= "mv " + working_dir + "all_circs/*Unique* " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
-    move_unique_peptide_res_cmd_3= "mv " + working_dir + "all_circs/*.mums " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
-    move_unique_peptide_res_cmd_4= "mv " + working_dir + "all_circs/Query.bed " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_1 = "mv " + working_dir + "all_circs/unique* " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_2 = "mv " + working_dir + "all_circs/*Unique* " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_3 = "mv " + working_dir + "all_circs/*.mums " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
+    move_unique_peptide_res_cmd_4 = "mv " + working_dir + "all_circs/Query.bed " + working_dir + "all_circs/sub_result_dir/unique_peptide_res_files/"
     os.system(move_unique_peptide_res_cmd_1)
     os.system(move_unique_peptide_res_cmd_2)
     os.system(move_unique_peptide_res_cmd_3)

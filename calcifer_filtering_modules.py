@@ -171,11 +171,15 @@ def chimeric_filtering(working_dir, datasets, genome_fasta, gtf_file):
                 id_of_circ = str(filtered_circ[key][3])
                 only_id = id_of_circ.split(",")[0]
                 id_split = key.split(":")
-                chromosome = id_split[0][3:]
+                chromosome = id_split[0]
                 start_pos = int(id_split[1].split("-")[0])
                 end_pos = int(id_split[1].split("-")[1])
                 gene_start_name = data.gene_names_at_locus(contig=chromosome, position=start_pos)
+                if len(gene_start_name) == 0:
+                    gene_start_name = data.gene_names_at_locus(contig=chromosome[3:], position=start_pos)
                 gene_end_name = data.gene_names_at_locus(contig=chromosome, position=end_pos)
+                if len(gene_end_name) == 0:
+                    gene_end_name = data.gene_names_at_locus(contig=chromosome[3:], position=start_pos)
                 gene_names = list(set(gene_start_name + gene_end_name))
                 if len(gene_names) == 0:
                     gene_names.append("NA")

@@ -31,8 +31,8 @@ def pe_file_structure(file_path, dataset):
    
    
 # single-end read trimming the raw read-data with flexbar #
-# trimming based on default values and a min read len of 20 #
-def se_flexbar(dataset, working_dir):
+# flexbar trimming based on a pre trim phred of 20 and a min read len of 50 #
+def se_flexbar(cores, dataset, working_dir):
     trim_gz_exist = os.path.isfile(working_dir + 'trim_' + dataset + '.fastq.gz')
     trim_fq_exist = os.path.isfile(working_dir + 'trim_' + dataset + '.fastq')
     if trim_gz_exist:
@@ -47,7 +47,7 @@ def se_flexbar(dataset, working_dir):
     else:
         trimmed_data = working_dir + 'trim_' + dataset + '.fastq.gz'
         trimming_cmd = 'flexbar -r ' + working_dir + dataset + '.fastq -t ' + working_dir + 'trim_' + dataset \
-                       + ' --zip-output GZ --qtrim-format i1.8 --min-read-length 20 -n 20 --output-reads ' + trimmed_data[:-3]
+                       + ' --zip-output GZ --qtrim-format i1.8 --pre-trim-phred 20 --min-read-length 50 -n ' + cores + ' --output-reads ' + trimmed_data[:-3]
         os.system(trimming_cmd)
         unzip_cmd = 'gunzip ' + trimmed_data
         os.system(unzip_cmd)
@@ -57,7 +57,7 @@ def se_flexbar(dataset, working_dir):
 
 # paired-end read trimming the raw read-data with flexbar #
 # trimming based on default values and a min read len of 20 #
-def pe_flexbar(dataset, working_dir):
+def pe_flexbar(cores, dataset, working_dir):
     trim_gz_exist = os.path.isfile(working_dir + 'trim_' + dataset + '_1.fastq.gz')
     trim_fq_exist = os.path.isfile(working_dir + 'trim_' + dataset + '_1.fastq')
     if trim_gz_exist:
@@ -79,7 +79,7 @@ def pe_flexbar(dataset, working_dir):
         trimmed_data_2 = working_dir + 'trim_' + dataset + '_2.fastq.gz'
         trimming_cmd = 'flexbar -r ' + working_dir + dataset + '_1.fastq -p ' + working_dir + dataset + '_2.fastq '\
                        + '-t ' + working_dir + 'trim_' + dataset \
-                       + ' -n 20 --zip-output GZ --qtrim-format i1.8 --min-read-length 20 --output-reads '\
+                       + ' -n ' + cores + ' --zip-output GZ --qtrim-format i1.8 --pre-trim-phred 20 --min-read-length 50 --output-reads '\
                        + trimmed_data_1[:-3] + ' --output-reads2 ' + trimmed_data_2[:-3]
         os.system(trimming_cmd)
         unzip_cmd_1 = 'gunzip ' + trimmed_data_1
