@@ -13,7 +13,7 @@ import pybedtools
 # get parental gene name for each circRNA identifier
 def parental_gene_name(working_dir, crna_list_file, gtf_file):
     data = Genome(reference_name='ref_annotation', annotation_name='genome_features', gtf_path_or_url=gtf_file)
-    # parse GTF and construct database of genomic features
+    # parse GTF and construct an database of genomic features
     data.index()
     with open(working_dir + "circrna_name_list.tsv", "w") as crna_out:
         header_line = "parental_gene\tcircRNA"

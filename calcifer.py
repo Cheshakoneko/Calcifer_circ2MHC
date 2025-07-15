@@ -39,13 +39,13 @@ def circexplorer2(args):
     # change functions based on type of reads #
 
         if read_type == "se":
-            working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
+            working_dir = calcifer_general_modules.file_structure(file_path, dataset, 'se')
             unzip_trimmed_data = calcifer_general_modules.se_flexbar(cores, dataset, working_dir)
 
             calcifer_circexplorer2_modules.se_star_mapping(working_dir, unzip_trimmed_data, star_index, cores)
 
         elif read_type == "pe":
-            working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
+            working_dir = calcifer_general_modules.file_structure(file_path, dataset, 'pe')
             unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(cores, dataset, working_dir)
 
             calcifer_circexplorer2_modules.pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2,
@@ -75,13 +75,13 @@ def ciri2(args):
     # change functions based on type of reads #
 
         if read_type == "se":
-            working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
+            working_dir = calcifer_general_modules.file_structure(file_path, dataset, 'se')
             unzip_trimmed_data = calcifer_general_modules.se_flexbar(cores, dataset, working_dir)
 
             calcifer_ciri2_modules.se_bwa_mapping(working_dir, unzip_trimmed_data, bwa_index, cores)
 
         elif read_type == "pe":
-            working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
+            working_dir = calcifer_general_modules.file_structure(file_path, dataset, 'pe')
             unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(cores, dataset, working_dir)
 
             calcifer_ciri2_modules.pe_bwa_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2, bwa_index, cores)
@@ -200,12 +200,12 @@ def full_run(args):
     for dataset in datasets:
         # bwa and star mapping of the dataset #
         if read_type == "se":
-            working_dir = calcifer_general_modules.se_file_structure(file_path, dataset)
+            working_dir = calcifer_general_modules.file_structure(file_path, dataset, 'se')
             unzip_trimmed_data = calcifer_general_modules.se_flexbar(cores, dataset, working_dir)
             calcifer_circexplorer2_modules.se_star_mapping(working_dir, unzip_trimmed_data, star_index, cores)
             calcifer_ciri2_modules.se_bwa_mapping(working_dir, unzip_trimmed_data, bwa_index, cores)
         elif read_type == "pe":
-            working_dir = calcifer_general_modules.pe_file_structure(file_path, dataset)
+            working_dir = calcifer_general_modules.file_structure(file_path, dataset,'pe')
             unzip_trimmed_data_1, unzip_trimmed_data_2 = calcifer_general_modules.pe_flexbar(cores, dataset, working_dir)
             calcifer_circexplorer2_modules.pe_star_mapping(working_dir, unzip_trimmed_data_1, unzip_trimmed_data_2,
                                                            star_index, cores)

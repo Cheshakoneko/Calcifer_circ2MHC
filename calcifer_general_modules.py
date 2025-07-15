@@ -1,35 +1,35 @@
 #!/usr/bin/env python
 
 import os
-
+from pathlib import Path
+import subprocess
 
 # module for general used functions i.e. file structure and trimming
 
+def file_structure(file_path: str, dataset: str, ending: str) -> Path:
+    base_path = Path(file_path)
+    dataset_path = base_path / dataset
 
-# creates a directory for each dataset if there is not already one #
-def se_file_structure(file_path, dataset):
-    dir_exists = os.path.exists(file_path + dataset + '/')
-    if dir_exists:
-        return file_path + dataset + '/'
+    if not dataset_path.exists():
+        dataset_path.mkdir(parents=True, exist_ok=True)
+        print(f"Creating directory {dataset_path} for dataset {dataset}...")
+
+    if ending == "pe":
+        fastq_files = [f"{dataset}_1.fastq", f"{dataset}_2.fastq"]
     else:
-        make_data_dir = 'mkdir ' + file_path + dataset
-        os.system(make_data_dir)
-        os.rename(file_path + dataset + '.fastq', file_path + dataset + '/' + dataset + '.fastq')
-        return file_path + dataset + '/'
-     
-        
-def pe_file_structure(file_path, dataset):
-    dir_exists = os.path.exists(file_path + dataset + '/')
-    if dir_exists:
-        return file_path + dataset + '/'
-    else:
-        make_data_dir = 'mkdir ' + file_path + dataset
-        os.system(make_data_dir)
-        os.rename(file_path + dataset + '_1.fastq', file_path + dataset + '/' + dataset + '_1.fastq')
-        os.rename(file_path + dataset + '_2.fastq', file_path + dataset + '/' + dataset + '_2.fastq')
-        return file_path + dataset + '/'
-   
-   
+        fastq_files = [f"{dataset}.fastq"]
+
+    for fq_file in fastq_files:
+        orig_fastq = base_path / fq_file
+        dest_path = dataset_path / orig_fastq.name
+        if orig_fastq.exists() and not dest_path.exists():
+            orig_fastq.rename(dest_path)
+        elif not orig_fastq.exists():
+            print(f"Warning: {orig_fastq.name} does not exist. Skipping...")
+        else:
+            print(f"Warning: {orig_fastq.name} already exists in {dataset_path}. Skipping...")
+    return dataset_path
+
 # single-end read trimming the raw read-data with flexbar #
 # flexbar trimming based on a pre trim phred of 20 and a min read len of 50 #
 def se_flexbar(cores, dataset, working_dir):
